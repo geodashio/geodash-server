@@ -1,0 +1,48 @@
+---
+name: geodashserver
+version: "0.0.1"
+description: "GeoDash Server 1.x"
+path:
+  geodash: "./src/geodash"
+less:
+  pre:
+    - "./src/geodash/global/geodashserver.less"
+  paths:
+    - "./src/geodash/global"
+  outfile: "main.css"
+  dest: "./build/css/"
+bootstrap:
+  src: "/home/vagrant/geodash-framework-django.git/geodash/static/geodash/lib/bootstrap/3.3.5/less"
+  variables: "./src/less/bootstrap/variables.less"
+  dest: "./build/bootstrap"
+plugins:
+  - map_map
+  - geodashserver_welcome
+  - geodashserver_sidebar
+  - main
+dependencies:
+  production:
+    javascript:
+      - "./src/js/main/*.js"
+      - "./build/meta/meta.js"
+      - "./build/templates/templates.js"
+    templates:
+      - "./src/templates/*.html"
+    project:
+      - "~/geodash-base.git/config.yml"
+  test:
+    javascript:
+      - "./src/js/main/*.js"
+      - "./src/js/polyfill/*.js"
+compiler:
+  list:
+    - name: "monkeypatch_js"
+      type: "js"
+      src: "./src/js/monkeypatch/*.js"
+      outfile: "monkeypatch.js"
+      dest: "./build/js/"
+    - name: polyfill_js
+      type: js
+      src: "./src/js/polyfill/*.js"
+      outfile: "polyfill.js"
+      dest:  "./build/js/"

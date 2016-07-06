@@ -1,0 +1,28 @@
+- model: geodashserver.geodashdashboard
+  pk: 1
+  fields:
+    title: "Base"
+    slug: base
+    center: "SRID=4326;POINT (0 0)"
+    config:
+#- model: geodashserver.geodashdashboard
+#  pk: 1
+#  fields:
+#    title: "WFP Facilities"
+#    slug: wfp_facilities
+#    center: "SRID=4326;POINT (0 0)"
+#    config:
+#- model: geodashserver.geodashdashboard
+#  pk: 2
+#  fields:
+#    title: "GIS Presence"
+#    slug: gis-presence
+#    template: gis_presence.yml
+#    center: "SRID=4326;POINT (0 0)"
+#- model: geodashserver.geodashdashboard
+#  pk: 3
+#  fields:
+#    title: "CAR Operation"
+#    slug: car_op
+#    template: car_op.yml
+#    center: "SRID=4326;POINT (0 0)"

@@ -1,0 +1,31 @@
+{% extends "geodashserver/map.html" %}
+
+{% block header %}
+{% with "WFP GeoDash - "|add:map_config.title as navbar_title %}
+{% include "geodashserver/_includes/header.html"%}
+{% endwith %}
+{% endblock %}
+
+{% block initial_data %}
+<script type="text/javascript" language="Javascript">
+    geodash.initial_data =
+    {
+      "data": {
+        "editor": {{ editor_json|safe }},
+        "map_config_schema": {{ map_config_schema_json|safe }},
+        "state_schema": {{ state_schema_json|safe }},
+        "dashboards_typeahead": {{ GEODASH_DASHBOARDS_TYPEAHEAD|safe }}
+      }
+    }
+</script>
+{% endblock %}
+
+{% block map_controllers %}
+{% if user.is_authenticated %}
+{% include "geodash/_includes/map_sidebar_toggle_right.html" %}
+{% endif %}
+{% include "geodash/_includes/map_overlays.html" %}
+{% if map_config.controls.legend %}
+{% include "geodash/_includes/map_legend.html" with legend_title=map_config.legend.title %}
+{% endif %}
+{% endblock %}

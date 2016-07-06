@@ -1,0 +1,8 @@
+---
+controllers: []
+directives:
+  - geodashserverModalWelcome.js
+templates:
+  - modal_welcome_geodashserver.tpl.html
+less:
+  - geodashserver_welcome.less

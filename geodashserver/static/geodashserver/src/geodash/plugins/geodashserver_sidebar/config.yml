@@ -1,0 +1,16 @@
+---
+controllers:
+  - controller_sidebar_geodashserver.js
+  - controller_modal_edit_field.js
+  - controller_modal_edit_object.js
+directives:
+  - geodashDashboardEditor.js
+  - geodashModalEditField.js
+  - geodashModalEditObject.js
+templates:
+  - dashboard_editor.tpl.html
+  - modal_edit_field.tpl.html
+  - modal_edit_object.tpl.html
+less:
+  - sidebar.less
+  - sidebar-toggle.less

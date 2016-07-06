@@ -1,0 +1,51 @@
+---
+panes:
+  - id: editor_basic
+    label: Basic
+    fields:
+      - title
+      - slug
+      - description
+      - logo.url
+      - logo.width
+      - logo.height
+  - id: editor_about
+    label: About
+    fields:
+      - about.title
+  - id: editor_welcome
+    label: Welcome
+    fields:
+      - welcome.title
+      - welcome.intro
+      - welcome.about
+  - id: editor_view
+    label: View
+    fields:
+      - renderlayers
+      - view.latitude
+      - view.longitude
+      - view.zoom
+      - view.minZoom
+      - view.maxZoom
+  - id: editor_controls
+    label: Controls
+    section: controls
+  - id: editor_overlays
+    label: Static Overlays
+    fields:
+      - overlays
+  - id: editor_featurelayers
+    label: Feature Layers
+    fields:
+      - featurelayers
+  - id: editor_baselayers
+    label: Base Layers
+    fields:
+      - view.baselayer
+      - baselayers
+  - id: legend
+    label: Legend
+    fields:
+      - legend.title
+      - legendlayers

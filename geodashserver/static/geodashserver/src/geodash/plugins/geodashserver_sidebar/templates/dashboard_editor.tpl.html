@@ -1,0 +1,217 @@
+<div class="geodash-dashboard-editor">
+  <h3 style="word-wrap:break-word;text-align:center;">Editor</h3>
+  <hr>
+  <form novalidate class="form-horizontal simple-form">
+    <ul class="nav nav-tabs nav-justified" role="tablist">
+      <li
+        ng-repeat="pane in editor.panes track by $index"
+        ng-init="paneIndex = $index"
+        role="presentation"
+        ng-class="$first ? 'active' : ''">
+        <a
+          href="#{{ pane.id }}"
+          aria-controls="{{ pane.id }}"
+          role="tab"
+          data-toggle="tab"
+          style="padding-left:8px; padding-right: 8px; height: 62px;"
+          ng-bind-html=" pane.label | md2html"></a>
+      </li>
+    </ul>
+    <div class="tab-content">
+      <div
+        ng-class="$first ? 'tab-pane fade in active' : 'tab-pane fade'"
+        ng-repeat="pane in fields_by_pane track by $index"
+        ng-init="paneIndex = $index"
+        id="{{ pane.id }}"
+        role="tabpanel"
+        style="padding: 10px;">
+        <div
+          ng-repeat="field in pane.fields track by $index"
+          ng-init="field_flat = (field | replace : '.' : '__')"
+          ng-init="fieldIndex = $index"
+          class="form-group"
+          style="margin:0; padding-top: 10px; padding-bottom: 10px;">
+          <div
+            ng-if="map_config_schema | extract : field : 'type' | inArray: ['text', 'string', 'markdown', 'md']">
+            <label
+              for="editor-field-{{ field_flat }}"
+              class="col-sm-3 control-label"
+              ng-bind-html="map_config_schema | extract : field : 'label'"></label>
+            <div class="col-sm-9">
+              <div
+                ng-if="map_config_schema | extract : field : 'multiline' | default_if_undefined: 'false' | inArray: [false, 'false', 'no', 0]"
+                class="input-group">
+                <div geodash-btn-info info="{{ map_config_schema | extract : field : 'description' }}"></div>
+                <input
+                  id="editor-field-{{ field_flat }}"
+                  name="editor-field-{{ field_flat }}"
+                  type="text"
+                  class="form-control"
+                  placeholder="{{ map_config_schema | extract : field : 'placeholder' }}"
+                  data-geodash-field-type="{{ map_config_schema | extract : field : 'type' }}"
+                  ng-required="map_config_schema | extract : field : 'required'"
+                  ng-value="map_config_flat | extract : field_flat"
+                  ng-model="map_config_flat[field_flat]"
+                  ng-change="validateField(field_flat)">
+                <a
+                  class="geodash-intent input-group-addon btn btn-primary btn-edit"
+                  href="#"
+                  data-intent-name="showModal"
+                  data-intent-data="{{ html5data('showModal', 'geodash-modal-edit-field', field) }}"
+                  data-intent-ctrl="{{ config.that.id }}">
+                  <i class="fa fa-pencil-square-o "></i>
+                </a>
+                <div geodash-btn-clear target="#editor-field-{{ field_flat }}"></div>
+              </div>
+              <div
+                ng-if="map_config_schema | extract : field : 'multiline' | default_if_undefined: 'false' | inArray: [true, 'true', 'yes', 1]"
+                class="input-group">
+                <div geodash-btn-info info="{{ map_config_schema | extract : field : 'description' }}"></div>
+                <textarea
+                  id="editor-field-{{ field_flat }}"
+                  name="editor-field-{{ field_flat }}"
+                  class="form-control"
+                  placeholder="{{ map_config_schema | extract : field : 'placeholder' }}"
+                  rows="3"
+                  data-geodash-field-type="{{ map_config_schema | extract : field : 'type' }}"
+                  ng-required="map_config_schema | extract : field : 'required'"
+                  style="max-width: 100%;"
+                  ng-model="map_config_flat[field_flat]"
+                  ng-change="validateField(field_flat)"
+                  ng-bind-html="map_config_flat | extract : field_flat"></textarea>
+                <a
+                  class="geodash-intent input-group-addon btn btn-primary btn-edit"
+                  href="#"
+                  data-intent-name="showModal"
+                  data-intent-data="{{ html5data('showModal', 'geodash-modal-edit-field', field) }}"
+                  data-intent-ctrl="{{ config.that.id }}">
+                  <i class="fa fa-pencil-square-o "></i>
+                </a>
+                <div geodash-btn-clear target="#editor-field-{{ field_flat }}"></div>
+              </div>
+            </div>
+            <div ng-show="form.$submitted || form.{{ field }}.$touched">
+              <span ng-show="form.{{ field }}.$error.required">{{ map_config_schema | extract : field : 'label' }} is required.</span>
+            </div>
+          </div>
+          <div
+            ng-if="map_config_schema | extract : field : 'type' | inArray: ['int', 'integer']">
+            <label
+              for="editor-field-{{ field_flat }}"
+              class="col-sm-3 control-label"
+              ng-bind-html="map_config_schema | extract : field : 'label'"></label>
+            <div class="col-sm-9 input-group">
+              <div geodash-btn-info info="{{ map_config_schema | extract : field : 'description' }}"></div>
+              <input
+                id="editor-field-{{ field_flat }}"
+                name="editor-field-{{ field_flat }}"
+                type="number"
+                class="form-control"
+                placeholder="{{ map_config_schema | extract : field : 'placeholder' }}"
+                data-geodash-field-type="{{ map_config_schema | extract : field : 'type' }}"
+                ng-required="map_config_schema | extract : field : 'required'"
+                ng-attr-min="{{ map_config_schema | extract : field : 'minValue' | default_if_undefined: '' }}"
+                ng-attr-max="{{ map_config_schema | extract : field : 'maxValue' | default_if_undefined: '' }}"
+                ng-value="map_config_flat | extract : field_flat"
+                ng-model="map_config_flat[field_flat]"
+                ng-change="validateField(field_flat)">
+              <div geodash-btn-clear target="#editor-field-{{ field_flat }}"></div>
+            </div>
+            <div ng-show="form.$submitted || form.{{ field }}.$touched">
+              <span ng-show="form.{{ field }}.$error.required">{{ map_config_schema | extract : field : 'label' }} is required.</span>
+            </div>
+          </div>
+          <div
+            ng-if="map_config_schema | extract : field : 'type' | inArray: ['boolean', 'checkbox']"
+            class="col-sm-offset-2 col-sm-10">
+            <div class="checkbox">
+              <label>
+                <input
+                  type="checkbox"
+                  ng-checked="map_config_flat | extract : field_flat"
+                  ng-model="map_config_flat[field_flat]"
+                  ng-change="validateField(field_flat)"> {{ map_config_schema | extract : field : 'label' }}
+              </label>
+            </div>
+          </div>
+          <div
+            ng-if="map_config_schema | extract : field : 'type' | inArray: ['stringarray', 'textarray']">
+            <label
+              for="editor-field-{{ field_flat }}"
+              class="col-sm-3 control-label"
+              ng-bind-html="map_config_schema | extract : field : 'label'"></label>
+            <div class="col-sm-9">
+              <div class="input-group">
+                <div geodash-btn-info info="{{ map_config_schema | extract : field : 'description' }}"></div>
+                <pre class="form-control" style="height: auto;max-height: 100px;">
+                  <span
+                    ng-repeat="x in map_config | extract : field track by $index"
+                    class="input-group"
+                    ng-bind-html="x">
+                  </span>
+                </pre>
+                <a
+                  class="geodash-intent input-group-addon btn btn-primary btn-edit"
+                  href="#"
+                  data-intent-name="showModal"
+                  data-intent-data="{{ html5data('showModal', 'geodash-modal-edit-field', field) }}"
+                  data-intent-ctrl="{{ config.that.id }}">
+                  <i class="fa fa-pencil-square-o "></i>
+                </a>
+                <div geodash-btn-clear target="#editor-field-{{ field_flat }}"></div>
+              </div>
+            </div>
+          </div>
+          <div
+            ng-if="map_config_schema | extract : field : 'type' | inArray: ['objectarray', 'objarray']">
+            <label
+              for="editor-field-{{ field_flat }}"
+              class="col-sm-3 control-label"
+              ng-bind-html="map_config_schema | extract : field : 'label'"></label>
+            <div class="col-sm-9">
+              <div class="input-group">
+                <div geodash-btn-info info="{{ map_config_schema | extract : field : 'description' }}"></div>
+                <pre class="form-control" style="height: auto; max-width: 280px;max-height: 100px;">
+                  <span
+                    ng-repeat="x in map_config| extract : field track by $index"
+                    class="input-group"
+                    ng-bind-html="x.title + ' ('+x.id+')'">
+                  </span>
+                </pre>
+                <a
+                  class="geodash-intent input-group-addon btn btn-primary btn-edit"
+                  href="#"
+                  data-intent-name="showModal"
+                  data-intent-data="{{ html5data('showModal', 'geodash-modal-edit-field', field) }}"
+                  data-intent-ctrl="{{ config.that.id }}">
+                  <i class="fa fa-pencil-square-o "></i>
+                </a>
+                <div geodash-btn-clear target="#editor-field-{{ field_flat }}"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <hr>
+    <div class="form-group">
+      <div class="col-sm-offset-3 col-sm-9">
+        <button
+          type="button"
+          class="btn btn-success"
+          ng-click="saveConfig()"
+        >Save</button>
+        <button
+          type="button"
+          class="btn btn-default">Reset</button>
+        <a
+          class="geodash-intent btn btn-primary"
+          data-intent-name="showModal"
+          data-intent-data="{{ config.html5data.modal_dashboard_config }}"
+          data-intent-ctrl="{{ config.that.id }}">
+          <i class="fa fa-code"></i>
+        </a>
+      </div>
+    </div>
+  </form>
+</div>

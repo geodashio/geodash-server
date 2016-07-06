@@ -1,0 +1,71 @@
+@import "variables.less";
+
+.geodashserver-welcome {
+
+  a {
+    font-family: @geodashserver-welcome-body-font-family;
+  }
+
+  a.btn-primary:hover, a.btn-primary:focus {
+
+    color: #fff;
+    background-color: #286090;
+    border-color: #204d74;
+  }
+
+  .tab-pane {
+
+    .welcome-body {
+      font-family: @geodashserver-welcome-body-font-family;
+      font-size: @geodashserver-welcome-body-font-size;
+    }
+
+    h3.welcome-body {
+      font-family: @geodashserver-welcome-body-font-family;
+      font-size: @geodashserver-welcome-body-font-size-h3;
+    }
+
+    .input-group {
+      width: 400px;
+    }
+
+    .input-group-addon {
+      font-family: @geodashserver-welcome-select-font-family;
+      font-size: @geodashserver-welcome-select-dropdown-font-size;
+
+    }
+
+    .input-group-addon.btn-clear {
+      color: #fff;
+      background-color: #d9534f;
+      border-color: #d43f3a;
+    }
+
+    .input-group-addon.btn-clear:hover, .input-group-addon.btn-clear:focus, .input-group-addon.btn-clear.focus {
+      color: #fff;
+      background-color: #c9302c;
+      border-color: #ac2925;
+    }
+
+    .select2-container {
+      height: @geodashserver-welcome-select-dropdown-height !important;
+    }
+
+    .select2-container .select2-selection--single {
+      height: @geodashserver-welcome-select-dropdown-height !important;
+      border-top-left-radius: 0px;
+      border-bottom-left-radius: 0px;
+    }
+
+    .select2-selection__rendered {
+      font-size: @geodashserver-welcome-select-dropdown-font-size;
+      line-height: @geodashserver-welcome-select-dropdown-height !important;
+    }
+
+  }
+
+}
+
+.geodashserver-welcome-select-dropdown {
+    z-index: @geodashserver-welcome-select-dropdown-z-index;
+}
