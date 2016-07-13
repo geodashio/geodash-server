@@ -20,6 +20,9 @@ except ImportError:
 from geodash.cache import provision_memcached_client
 
 from geodashserver.models import GeoDashDashboard
+from geodashserver.utils import build_initial_state, build_state_schema
+
+SCHEMA_PATH = 'geodashserver/static/geodashserver/build/schema/schema.yml'
 
 
 def home(request, template="home.html"):
@@ -29,33 +32,12 @@ def explore(request, template="geodashserver/explore.html"):
     now = datetime.datetime.now()
     current_month = now.month
 
-    map_config_yml = get_template("geodashserver/maps/explore.yml").render({})
-    map_config = yaml.load(map_config_yml)
+    slug = "explore"
+    map_obj = get_object_or_404(GeoDashDashboard, slug=slug)
+    map_config = yaml.load(map_obj.config)
 
-    ##############
-    initial_state = {
-        "page": "explore",
-        "view": {
-            "lat": map_config["view"]["latitude"],
-            "lon": map_config["view"]["longitude"],
-            "z": map_config["view"]["zoom"],
-            "baselayer": map_config["view"].get("baselayer", None),
-            "featurelayers": []
-        },
-        "filters": {},
-        "styles": {}
-    }
-    state_schema = {
-        "view": {
-          "lat": "float",
-          "lon": "float",
-          "z": "integer",
-          "baselayer": "string",
-          "featurelayers": "stringarray"
-        },
-        "filters": {},
-        "styles": {}
-    }
+    initial_state = build_initial_state(map_config, slug)
+    state_schema = build_state_schema()
 
     ctx = {
         "map_config": map_config,
@@ -64,7 +46,8 @@ def explore(request, template="geodashserver/explore.html"):
         "state_json": json.dumps(initial_state),
         "state_schema": state_schema,
         "state_schema_json": json.dumps(state_schema),
-        "init_function": "init_explore"
+        "init_function": "init_dashboard",
+        "geodash_main_id": "geodash-main"
     }
 
     return render_to_response(template, RequestContext(request, ctx))
@@ -86,36 +69,17 @@ def geodash_dashboard(request, slug=None, template="geodashserver/dashboard.html
     map_config["slug"] = map_obj.slug
     map_config["title"]  = map_obj.title
 
-    map_config_schema_template = "geodash/schema.yml"
-    map_config_schema_yml = get_template(map_config_schema_template).render({})
-    map_config_schema = yaml.load(map_config_schema_yml)
+    #map_config_schema_template = "geodash/schema.yml"
+    #map_config_schema_yml = get_template(map_config_schema_template).render({})
+    #map_config_schema = yaml.load(map_config_schema_yml)
+    map_config_schema = yaml.load(file(SCHEMA_PATH,'r'))
 
     editor_template = "geodashserver/editor.yml"
     editor_yml = get_template(editor_template).render({})
     editor = yaml.load(editor_yml)
 
-    initial_state = {
-        "page": "dashboard",
-        "slug": slug,
-        "view": {
-            "lat": map_config["view"]["latitude"],
-            "lon": map_config["view"]["longitude"],
-            "z": map_config["view"]["zoom"],
-            "baselayer": map_config["view"].get("baselayer", None),
-            "featurelayers": []
-        }
-    }
-    state_schema = {
-        "view": {
-          "lat": "float",
-          "lon": "float",
-          "z": "integer",
-          "baselayer": "string",
-          "featurelayers": "stringarray"
-        },
-        "filters": {},
-        "styles": {}
-    }
+    initial_state = build_initial_state(map_config, slug)
+    state_schema = build_state_schema()
 
     ctx = {
         "pages_json": json.dumps(pages),
@@ -129,7 +93,8 @@ def geodash_dashboard(request, slug=None, template="geodashserver/dashboard.html
         "state_json": json.dumps(initial_state),
         "state_schema": state_schema,
         "state_schema_json": json.dumps(state_schema),
-        "init_function": "init_dashboard"
+        "init_function": "init_dashboard",
+        "geodash_main_id": "geodash-main"
     }
 
     return render_to_response(template, RequestContext(request, ctx))
@@ -147,6 +112,53 @@ def geodash_dashboard_config(request, slug=None):
     map_config = yaml.load(map_config_yml)
 
     return HttpResponse(json.dumps(map_config, default=jdefault), content_type="application/json")
+
+def geodash_dashboard_config_new(request):
+
+    if not request.user.is_authenticated():
+        raise Http404("Not authenticated.")
+
+    if request.is_ajax():
+        raise Http404("Use AJAX.")
+
+    if request.method != 'POST':
+        raise Http404("Can only use POST")
+
+    config = yaml.load(request.body)
+    slug = config.pop('slug', None)
+
+    map_obj = None
+    try:
+        map_obj = GeoDashDashboard.objects.get(slug=slug)
+    except GeoDashDashboard.DoesNotExist:
+        map_obj = None
+
+    response_json = None
+
+    if map_obj:
+        response_json = {
+            'success': False,
+            'message': 'Create new dashboard failed.  Same slug.'
+        }
+    else:
+        title = config.pop('title', None)
+        map_obj = GeoDashDashboard(
+          slug=slug,
+          title=title,
+          config=yaml.dump(config))
+        map_obj.save()
+
+        config.update({
+            'slug': slug,
+            'title': title
+        })
+        response_json = {
+            'success': True,
+            'map_config': config
+        }
+
+    return HttpResponse(json.dumps(response_json, default=jdefault), content_type="application/json")
+
 
 def geodash_dashboard_config_save(request, slug=None):
 
@@ -177,11 +189,13 @@ def geodash_dashboard_config_save(request, slug=None):
 
     return HttpResponse(json.dumps(response_json, default=jdefault), content_type="application/json")
 
+
 def geodash_map_schema(request):
 
-    map_config_schema_template = "geodash/schema.yml"
-    map_config_schema_yml = get_template(map_config_schema_template).render({})
-    map_config_schema = yaml.load(map_config_schema_yml)
+    #map_config_schema_template = "geodash/schema.yml"
+    #map_config_schema_yml = get_template(map_config_schema_template).render({})
+    #map_config_schema = yaml.load(map_config_schema_yml)
+    map_config_schema = yaml.load(file(SCHEMA_PATH,'r'))
 
     return HttpResponse(json.dumps(map_config_schema, default=jdefault), content_type="application/json")
 

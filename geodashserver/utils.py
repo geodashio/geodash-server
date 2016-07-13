@@ -1,7 +1,8 @@
 import datetime
 import psycopg2
+import yaml
 
-from jenks import jenks
+#from jenks import jenks
 
 from django.conf import settings
 from django.template import Context
@@ -38,3 +39,25 @@ def get_month_number(month):
                 month_num += 1
 
     return month_num
+
+
+def build_initial_state(dashboard_config, slug=None):
+
+    initial_state = {
+        "page": "dashboard",
+        "slug": (slug or dashboard_config["slug"]),
+        "view": {
+            "lat": dashboard_config["view"]["latitude"],
+            "lon": dashboard_config["view"]["longitude"],
+            "z": dashboard_config["view"]["zoom"],
+            "baselayer": dashboard_config["view"].get("baselayer", None),
+            "featurelayers": []
+        }
+    }
+    return initial_state
+
+def build_state_schema():
+    t = "geodashserver/enumerations.yml"
+    y = get_template(t).render({})
+    obj = yaml.load(y)
+    return obj.get('state_schema', None)

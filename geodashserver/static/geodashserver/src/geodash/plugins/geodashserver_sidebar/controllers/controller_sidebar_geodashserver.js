@@ -164,27 +164,68 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
   $scope.saveConfig = function($event)
   {
     var slug = $('#geodash-main').scope()['state']['slug'];
-    var data = $scope.map_config;
-    var httpConfig = {
-        'headers': {
-          'Content-Type': 'application/json',
-          'X-CSRFToken': $cookies['csrftoken']
-        }
-    };
-    $http.post('/api/dashboard/'+slug+'/config/save', data, httpConfig).success(function(data) {
-      console.log(data);
-      if(data.success)
+    if(window.confirm("Are you sure you want to save?"))
+    {
+      var httpConfig = {
+          'headers': {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': $cookies['csrftoken']
+          }
+      };
+      var data = $scope.map_config;
+      $http.post('/api/dashboard/'+slug+'/config/save', data, httpConfig).success(function(data)
       {
-        if(data.map_config.slug != slug)
+        console.log(data);
+        if(data.success)
+        {
+          if(data.map_config.slug != slug)
+          {
+            window.location.href = '/dashboard/'+data.map_config.slug;
+          }
+          else
+          {
+            location.reload();
+          }
+        }
+        else
+        {
+            window.alert(data.message);
+        }
+      });
+    }
+  };
+
+  $scope.saveAsConfig = function($event)
+  {
+    var slug = $('#geodash-main').scope()['state']['slug'];
+    if(window.confirm("Are you sure you want to save as a new dashboard?  Old one will still exist at old slug."))
+    {
+      if($scope.map_config.slug == slug)
+      {
+        alert("Cannot save as.  Need to specify new unique slug.")
+        return 1;
+      }
+
+      var httpConfig = {
+          'headers': {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': $cookies['csrftoken']
+          }
+      };
+      var data = $scope.map_config;
+      $http.post('/api/dashboard/config/new', data, httpConfig).success(function(data)
+      {
+        console.log(data);
+        if(data.success)
         {
           window.location.href = '/dashboard/'+data.map_config.slug;
         }
         else
         {
-          location.reload();
+            window.alert(data.message);
         }
-      }
-    });
+      });
+    }
   };
 
   /*$scope.build_title_edit_object = function(map_config_schema, field, object)

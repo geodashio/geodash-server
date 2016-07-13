@@ -1,4 +1,4 @@
-geodash.init_dashboard = function(appName)
+geodash.init_dashboard = function(appName, mainElement)
 {
   geodash.app = app = angular.module(appName, ['ngRoute', 'ngSanitize', 'ngCookies']);
 
@@ -13,11 +13,10 @@ geodash.init_dashboard = function(appName)
     return {
       "map": undefined,
       "baselayers": {},
-      "featurelayers": {
-        "popatrisk":undefined
-      }
+      "featurelayers": {}
     };
   });
+  
   // Initialize UI interaction for intents.
   // Listen's for events bubbling up to body element, so can initialize before children.
   geodash.init.listeners();
@@ -36,7 +35,7 @@ geodash.init_dashboard = function(appName)
 
   geodash.init_controller_base(app);
 
-  init_geodashserver_controller_main($('.geodash-controller.geodash-main'), app);
+  init_geodashserver_controller_main(mainElement, app);
 
   angular.bootstrap(document, [appName]);
 };

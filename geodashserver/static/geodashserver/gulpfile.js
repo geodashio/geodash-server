@@ -12,6 +12,7 @@ var templateCache = require('gulp-angular-templatecache');
 var yaml = require("yamljs");
 var del = require('del');
 var path = require('path');
+var merge = require('merge');
 var argv = require('yargs').argv;
 var expandHomeDir = require('expand-home-dir');
 var spawn = require('child_process').spawn;
@@ -104,6 +105,7 @@ var configs = flatten_configs(load_config("./config.yml"));
 var geodash_meta_projects = [];
 var geodash_meta_plugins = [];
 
+var compile_schemas = [];
 var compile_templates = [];
 var compile_enumerations = [];
 var compile_filters = [];
@@ -134,6 +136,7 @@ for(var i = 0; i < configs.length; i++)
 
   var path_plugins = path.join(config.path.base, config.path.geodash, "plugins")
 
+  var project_schemas = [];
   var project_templates = [];  // Exported to the compile process
   var project_enumerations = []; // Exported to the compile process
   var project_filters = []; // Exported to the compile process
@@ -168,10 +171,11 @@ for(var i = 0; i < configs.length; i++)
     geodash_meta_plugins.push(geodash_plugin);
 
     var files = collect_files_all(path_plugins, geodash_plugin,
-      ["enumerations", "filters", "controllers", "directives", "templates", "less"]);
+      ["enumerations", "schemas", "filters", "controllers", "directives", "templates", "less"]);
 
-    project_templates = project_templates.concat(files["templates"]);
     project_enumerations = project_enumerations.concat(files["enumerations"]);
+    project_schemas = project_schemas.concat(files["schemas"]);
+    project_templates = project_templates.concat(files["templates"]);
     project_filters = project_filters.concat(files["filters"]);
     project_directives = project_directives.concat(files["directives"]);
     project_controllers = project_controllers.concat(files["controllers"]);
@@ -184,9 +188,9 @@ for(var i = 0; i < configs.length; i++)
       config["dependencies"]["production"]["templates"].map(function(x){return path.join(config.path.base, x);})
     );
   }
-  compile_templates = compile_templates.concat(project_templates);
-
   compile_enumerations = compile_enumerations.concat(project_enumerations);
+  compile_schemas = compile_schemas.concat(project_schemas);
+  compile_templates = compile_templates.concat(project_templates);
   compile_filters = compile_filters.concat(project_filters);
   compile_directives = compile_directives.concat(project_directives);
   compile_controllers = compile_controllers.concat(project_controllers);
@@ -259,10 +263,10 @@ var copylist =
 if(argv.debug)
 {
   gutil.log(gutil.colors.magenta('Compilelist built.'));
-  gutil.log(gutil.colors.magenta(yaml.stringify(compilelist, 5)));
+  gutil.log(gutil.colors.magenta(yaml.stringify(compilelist, 8, 2)));
 }
 
-gulp.task('compile', ['clean', 'geodash:templates'], function(){
+gulp.task('compile', ['clean', 'geodash:schema', 'geodash:templates'], function(){
     for(var i = 0; i < compilelist.length; i++)
     {
         var t = compilelist[i];
@@ -322,6 +326,29 @@ gulp.task('geodash:meta', ['clean'], function(cb){
   fs.writeFile('./build/meta/meta.js',contents, cb);
 });
 
+gulp.task('geodash:schema', ['clean'], function(cb){
+
+  var schema = {};
+
+  for(var i = 0; i < compile_schemas.length; i++)
+  {
+    var plugin_schema = require(expandHomeDir(compile_schemas[i]));
+    schema = merge(schema, plugin_schema);
+  }
+
+  if(argv.debug)
+  {
+    gutil.log(gutil.colors.magenta('Schema'));
+    gutil.log(gutil.colors.magenta(yaml.stringify(schema, 8, 2)));
+  }
+
+  if (!fs.existsSync('./build')){ fs.mkdirSync('./build'); }
+  if (!fs.existsSync('./build/schema')){ fs.mkdirSync('./build/schema'); }
+
+  fs.writeFile('./build/schema/schema.yml', '---\n'+yaml.stringify(schema, 8, 2), cb);
+  //fs.writeFile('./build/schema/schema.json', JSON.stringify(schema), cb);
+});
+
 gulp.task('geodash:templates', ['clean'], function(){
 
   return gulp.src(compile_templates)
@@ -362,6 +389,7 @@ gulp.task('default', [
   'clean',
   'copy',
   'geodash:meta',
+  'geodash:schema',
   'geodash:templates',
   'compile']);
 

@@ -53,6 +53,11 @@ urlpatterns = [
         name='geodash_editor_config'),
 
     url(
+        r'^api/dashboard/config/new$',
+        views.geodash_dashboard_config_new,
+        name='geodash_dashboard_config_new'),
+
+    url(
         r'^api/dashboard/(?P<slug>[^/]+)/config/save$',
         views.geodash_dashboard_config_save,
         name='geodash_dashboard_config_save'),

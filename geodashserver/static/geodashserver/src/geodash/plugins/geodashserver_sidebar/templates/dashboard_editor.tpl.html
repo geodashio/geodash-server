@@ -203,14 +203,17 @@
         >Save</button>
         <button
           type="button"
+          class="btn btn-success"
+          ng-click="saveAsConfig()"
+        >Save As ...</button>
+        <button
+          type="button"
           class="btn btn-default">Reset</button>
         <a
           class="geodash-intent btn btn-primary"
           data-intent-name="showModal"
           data-intent-data="{{ config.html5data.modal_dashboard_config }}"
-          data-intent-ctrl="{{ config.that.id }}">
-          <i class="fa fa-code"></i>
-        </a>
+          data-intent-ctrl="{{ config.that.id }}">Config</a>
       </div>
     </div>
   </form>
