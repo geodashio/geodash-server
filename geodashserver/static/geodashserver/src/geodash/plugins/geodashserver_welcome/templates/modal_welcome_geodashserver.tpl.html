@@ -49,16 +49,29 @@
                 name="dashboard-input"
                 type="text"
                 class="typeahead form-control"
-                style="width:400px; height: auto;"
-                placeholder="dashboard (e.g., CAR Operation, GIS Presence, WFP Facilities, etc.)"
+                style="width:320px; height: auto;"
+                placeholder="dashboard (e.g., Test, etc.)"
                 aria-describedby="dashboard-addon"
-                data-placeholder="dashboard (e.g., CAR Operation, GIS Presence, WFP Facilities, etc.)"
+                data-placeholder="dashboard (e.g., Test, etc.)"
                 data-initial-data="dashboards_typeahead"
                 data-backend="dashboard-input-backend"
                 data-template-empty="<div class=&quot;alert alert-danger empty-message&quot;>Unable to find dashboard</div>">
-                <div class="input-group-addon btn btn-danger btn-clear" data-clear="#dashboard-input">
-                  <i class="fa fa-times"></i>
-                </div>
+              <div
+                class="input-group-addon btn btn-primary btn-show-options"
+                data-toggle="tooltip"
+                data-placement="bottom"
+                title="Show Options."
+                ng-click="showOptions($event, '#dashboard-input')">
+                <i class="fa fa-chevron-down"></i>
+              </div>
+              <div
+                class="input-group-addon btn btn-danger btn-clear"
+                data-toggle="tooltip"
+                data-placement="bottom"
+                title="Clear dashboard selection."
+                data-clear="#dashboard-input">
+                <i class="fa fa-times"></i>
+              </div>
             </div>
             <hr>
             <ul class="nav nav-justified welcome-go">

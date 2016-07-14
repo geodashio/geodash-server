@@ -1,6 +1,10 @@
 geodash.directives["geodashserverModalWelcome"] = function(){
   return {
-    controller: ['$scope', function($scope) {}],
+    controller: ['$scope', function($scope) {
+
+      $scope.showOptions = geodash.ui.showOptions;
+
+    }],
     restrict: 'EA',
     replace: true,
     //scope: {
