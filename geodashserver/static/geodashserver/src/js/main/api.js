@@ -57,8 +57,8 @@ geodashserver.html5data = function()
           "prefix_field_flat": field_flat
         }
         data["dynamic"] = {
-          "modaleditobject_map_config": ["source", "modaleditfield_map_config"],
-          "modaleditobject_map_config_flat": ["source", "modaleditfield_map_config_flat"],
+          "modaleditobject_workspace": ["source", "modaleditfield_workspace"],
+          "modaleditobject_workspace_flat": ["source", "modaleditfield_workspace_flat"],
           "object_schema": ["source", "map_config_schema", field, "schema"],
           "map_config_schema": ["source", "map_config_schema"],
           "map_config_schema_flat": ["source", "map_config_schema_flat"]
@@ -66,11 +66,11 @@ geodashserver.html5data = function()
         if(angular.isNumber(objectIndex))
         {
           data["static"]["objectIndex"] = objectIndex;
-          data["dynamic"]["object"] = ["source", "modaleditfield_map_config", field, objectIndex];
+          data["dynamic"]["object"] = ["source", "modaleditfield_workspace", field, objectIndex];
         }
         else
         {
-          data["dynamic"]["objectIndex"] = ["source", "modaleditfield_map_config", field, "length"];
+          data["dynamic"]["objectIndex"] = ["source", "modaleditfield_workspace", field, "length"];
           data["dynamic"]["object"] = undefined;
         }
       }
@@ -92,8 +92,8 @@ geodashserver.html5data = function()
         },
         "dynamic": {
           "value_edit_field": ["source", "map_config", field],
-          "modaleditfield_map_config": ["source", "map_config"],
-          "modaleditfield_map_config_flat": ["source", "map_config_flat"],
+          "modaleditfield_workspace": ["source", "map_config"],
+          "modaleditfield_workspace_flat": ["source", "map_config_flat"],
           "map_config_schema": ["source", "map_config_schema"],
           "map_config_schema_flat": ["source", "map_config_schema_flat"]
         }
@@ -165,7 +165,7 @@ geodashserver.html5data = function()
         "field_flat": prefix_field_flat
       },
       "dynamic": {
-        "value_edit_field": ["source", "modaleditobject_map_config", prefix_field]
+        "value_edit_field": ["source", "modaleditobject_workspace", prefix_field]
       }
     };
     if(angular.isDefined(fields))

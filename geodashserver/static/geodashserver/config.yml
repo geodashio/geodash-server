@@ -35,14 +35,147 @@ dependencies:
       - "./src/js/main/*.js"
       - "./src/js/polyfill/*.js"
 compiler:
-  list:
-    - name: "monkeypatch_js"
-      type: "js"
-      src: "./src/js/monkeypatch/*.js"
-      outfile: "monkeypatch.js"
-      dest: "./build/js/"
-    - name: polyfill_js
-      type: js
-      src: "./src/js/polyfill/*.js"
-      outfile: "polyfill.js"
-      dest:  "./build/js/"
+  list: []
+resources:
+  - name: geodashserver.less
+    path: ./src/geodash/global/geodashserver.less
+  - name: bootstrap.css
+    path: ./build/bootstrap/bootstrap.css
+  - name: polyfill.min.js
+    path: ./build/js/polyfill.min.js
+build:
+  main.css:
+    name: main.css
+    type: less
+    src:
+      - type: resource
+        project: geodashserver
+        name: geodashserver.less
+      - type: var
+        name: compile_less  # GeoDash will concat array variables
+    outfile: geodashserver.css
+    dest: ./build/css/
+    paths: ./src/geodash/global
+  monolith.css:
+    name: monolith.css # more complicated, since need to automaticlly rewrite paths in urls
+    type: css
+    src:
+      - type: resource
+        project: geodash
+        name: jquery-ui.min.css
+      - type: resource
+        project: geodash
+        name: select2.min.css
+      - type: resource
+        project: geodash
+        name: select2-bootstrap.min.css
+      - type: resource
+        project: geodashserver
+        name: bootstrap.css
+      - type: resource
+        project: geodash
+        name: typeaheadjs.css
+      - type: resource
+        project: geodash
+        name: c3.min.css
+      - type: resource
+        project: geodash
+        name: leaflet.css
+      - type: resource
+        project: geodash
+        name: leaflet.label.css
+      - type: resource
+        project: geodash
+        name: font-awesome.min.css
+      - type: build
+        name: main.css
+    outfile: geodashserver.full.css
+    dest: ./build/css/
+  polyfill.js:
+    name: polyfill.js
+    type: js
+    src: "./src/js/polyfill/*.js"
+    outfile: polyfill.js
+    dest:  ./build/js/
+  main.js:
+    name: main.js
+    type: js
+    src:
+      - type: var
+        name: compile_js  # GeoDash will concat array variables
+    outfile: geodashserver.js
+    dest: ./build/js/
+  monkeypatch.js:
+    name: monkeypatch.js
+    type: js
+    src: "./src/js/monkeypatch/*.js"
+    outfile: monkeypatch.js
+    dest: ./build/js/
+  monolith.js:
+    name: monolith.js
+    type: js
+    src:
+      - type: resource
+        project: geodash
+        version: "1.9.1"
+        name: jquery.js
+      - type: resource
+        project: geodash
+        version: "1.11.4"
+        name: jquery-ui.js
+      - type: resource
+        project: geodash
+        name: yaml.js
+      - type: resource
+        project: geodash
+        version: "4.0.1"
+        name: select2.full.js
+      - type: resource
+        project: geodash
+        name: typeahead.custom.js
+      - type: resource
+        project: geodash
+        version: "1.4.0-beta.4"
+        names:
+          - angular.js
+          - angular-route.js
+          - angular-sanitize.js
+          - angular-cookies.js
+      - type: resource
+        project: geodash
+        version: "3.3.5"
+        name: bootstrap.js
+      - type: resource
+        project: geodash
+        version: "3.5.14"
+        name: d3.js
+      - type: resource
+        project: geodash
+        version: "0.4.10"
+        name: c3.js
+      - type: resource
+        project: geodash
+        version: "1.0.0-b1"
+        name: leaflet-src.js
+      - type: resource
+        project: geodash
+        name: leaflet.utfgrid-src.js
+      - type: resource
+        project: geodash
+        names:
+          - wfp-simpleheat.js
+          - wfp-heatcanvas.js
+          - wfp-heatlayer.js
+      - type: resource
+        project: geodash
+        name: leaflet.label-src.js
+      - type: resource
+        project: geodash
+        version: "1.3.0"
+        name: showdown.js
+      - type: build
+        name: monkeypatch.js
+      - type: build
+        name: main.js
+    outfile: geodashserver.full.js
+    dest: ./build/js/

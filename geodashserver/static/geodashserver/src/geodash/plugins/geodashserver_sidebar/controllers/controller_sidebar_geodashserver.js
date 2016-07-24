@@ -11,22 +11,30 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
       "modal_dashboard_config": {
         "id": "geodash-modal-dashboard-config",
         "dynamic": {
-          "map_config": ["source", "map_config"],
-          "map_config_flat": ["source", "map_config_flat"],
-          "map_config_schema": ["source", "map_config_schema"],
-          "map_config_schema_flat": ["source", "map_config_schema_flat"]
+          "workspace": ["source", "workspace"],
+          "workspace_flat": ["source", "workspace_flat"]//,
+          //"map_config_schema": ["source", "schema", "config"],
+          //"map_config_schema_flat": ["source", "schema_flat", "config"]
         }
       }
     }
   };
   /////////////////////
-
-
-  $scope.map_config = map_config;
-  $scope.map_config_flat = geodash.api.flatten($scope.map_config, undefined);
+  $scope.perms = geodash.perms;
   $scope.editor = geodash.initial_data["data"]["editor"];
-  $scope.map_config_schema = geodash.initial_data["data"]["map_config_schema"];
-  $scope.map_config_schema_flat = geodash.api.flatten($scope.map_config_schema, undefined);
+  /////////////////////
+  // Accessible by Editor
+  $scope.workspace = {
+    "config": map_config,
+    "security": geodash.initial_data["data"]["security"]
+  };
+  $scope.workspace_flat = geodash.api.flatten($scope.workspace, undefined);
+  $scope.schema = {
+    "config": geodash.initial_data["data"]["map_config_schema"],
+    "security": geodash.initial_data["data"]["security_schema"]
+  };
+  $scope.schema_flat = geodash.api.flatten($scope.schema, undefined);
+  /////////////////////
   $scope.fields_by_pane = {};
   $scope.value_edit_field = null;
 
@@ -45,9 +53,9 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
           fields_all = fields_all.concat(pane.fields);
         }
 
-        if("section" in pane && pane.section in $scope.map_config_schema)
+        if("section" in pane && pane.section in $scope.schema.config)
         {
-          fields_all = fields_all.concat($.map($scope.map_config_schema[pane.section], function(value, key){
+          fields_all = fields_all.concat($.map($scope.schema.config[pane.section], function(value, key){
             return pane.section+"."+key;
           }));
         }
@@ -59,13 +67,7 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
   $scope.updateVariables();
   $scope.$watch('map_config', $scope.updateVariables);
   $scope.$watch('editor', $scope.updateVariables);
-  $scope.$watch('map_config_schema', $scope.updateVariables);
-  /*$scope.$watch('map_config',  function(){
-    $scope.map_config_flat = geodash.api.flatten($scope.map_config, undefined);
-  });
-  $scope.$watch('map_config_flat', function(){
-    $scope.map_config = geodash.api.unpack($scope.map_config_flat);
-  });*/
+  $scope.$watch('schema', $scope.updateVariables);
 
   var jqe = $($element);
 
@@ -81,12 +83,12 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
     // Update map_config
     if(field_flat.indexOf("__") == -1)
     {
-      $scope.map_config[field_flat] = $scope.map_config_flat[field_flat];
+      $scope.workspace[field_flat] = $scope.workspace_flat[field_flat];
     }
     else
     {
       var keyChain = field_flat.split("__");
-      var target = $scope.map_config;
+      var target = $scope.workspace;
       for(var j = 0; j < keyChain.length -1 ; j++)
       {
         var newKey = keyChain[j];
@@ -108,12 +110,12 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
           {
             target.push({});
           }
-          target.push($scope.map_config_flat[field_flat]);
+          target.push($scope.workspace_flat[field_flat]);
         }
       }
       else
       {
-        target[finalKey] = $scope.map_config_flat[field_flat];
+        target[finalKey] = $scope.workspace_flat[field_flat];
       }
     }
   };
@@ -123,16 +125,16 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
 
   $scope.addToField = function($event, field, field_flat)
   {
-    var currentValue = extract(field.split("."), $scope.map_config);
+    var currentValue = extract(field.split("."), $scope.workspace);
     if(Array.isArray(currentValue))
     {
       var valueToAdd = $("#editor-field-"+field_flat).val();
       if(angular.isString(valueToAdd) && valueToAdd != "")
       {
         var newValue = currentValue.push(valueToAdd);
-        $scope.map_config[field] = newValue;
+        $scope.workspace[field] = newValue;
         $.each(geodash.api.flatten(newValue), function(i, x){
-          $scope.map_config_flat[field_flat+"__"+i] = x;
+          $scope.workspace_flat[field_flat+"__"+i] = x;
         });
       }
     }
@@ -141,7 +143,7 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
       var valueToAdd = $("#editor-field-"+field_flat).val();
       if(angular.isString(valueToAdd) && valueToAdd != "")
       {
-        $scope.map_config_flat[field_flat] = currentValue + "," + valueToAdd;
+        $scope.workspace_flat[field_flat] = currentValue + "," + valueToAdd;
         $scope.validateField(field_flat);
       }
     }
@@ -150,7 +152,7 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
       var valueToAdd = $("#editor-field-"+field_flat).val();
       if(angular.isString(valueToAdd) && valueToAdd != "")
       {
-        $scope.map_config_flat[field_flat] = currentValue + parseFloat(valueToAdd);
+        $scope.workspace_flat[field_flat] = currentValue + parseFloat(valueToAdd);
         $scope.validateField(field_flat);
       }
     }
@@ -172,15 +174,14 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
             'X-CSRFToken': $cookies['csrftoken']
           }
       };
-      var data = $scope.map_config;
-      $http.post('/api/dashboard/'+slug+'/config/save', data, httpConfig).success(function(data)
+      $http.post('/api/dashboard/'+slug+'/config/save', $scope.workspace.config, httpConfig).success(function(data)
       {
         console.log(data);
         if(data.success)
         {
           if(data.map_config.slug != slug)
           {
-            window.location.href = '/dashboard/'+data.map_config.slug;
+            window.location.href = '/dashboard/'+data.config.slug;
           }
           else
           {
@@ -200,7 +201,7 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
     var slug = $('#geodash-main').scope()['state']['slug'];
     if(window.confirm("Are you sure you want to save as a new dashboard?  Old one will still exist at old slug."))
     {
-      if($scope.map_config.slug == slug)
+      if($scope.workspace.config.slug == slug)
       {
         alert("Cannot save as.  Need to specify new unique slug.")
         return 1;
@@ -212,13 +213,12 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
             'X-CSRFToken': $cookies['csrftoken']
           }
       };
-      var data = $scope.map_config;
-      $http.post('/api/dashboard/config/new', data, httpConfig).success(function(data)
+      $http.post('/api/dashboard/config/new', $scope.workspace.config, httpConfig).success(function(data)
       {
         console.log(data);
         if(data.success)
         {
-          window.location.href = '/dashboard/'+data.map_config.slug;
+          window.location.href = '/dashboard/'+data.config.slug;
         }
         else
         {
@@ -227,19 +227,6 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
       });
     }
   };
-
-  /*$scope.build_title_edit_object = function(map_config_schema, field, object)
-  {
-    if(object != undefined)
-    {
-      return 'Edit / ' + extract([field, 'label'], map_config_schema) +' / ' + object.id;
-    }
-    else
-    {
-      return 'Edit / ' + extract([field, 'label'], map_config_schema) +' / New Object';
-      //ng-bind-html="map_config_schema | extract : field : 'label' | prepend : 'Edit / ' | append : ' / ' : object.id | md2html"></h4>
-    }
-  };*/
 
   setTimeout(function(){
     $('[data-toggle="tooltip"]', $element).tooltip();

@@ -1,31 +1,40 @@
 var buildPageURL = function($interpolate, map_config, state)
 {
-  var url = $interpolate(map_config.pages[state["page"]])(state);
+  var template = geodash.api.getPage(state["page"]);
+  if(template != undefined)
+  {
+    //
+    var url = $interpolate(template)(state);
 
-  var hash_args = [];
-  var view = state["view"];
-  if(view != undefined && view["z"] != undefined && view["lat"] != undefined && view["lon"] != undefined)
-  {
-    hash_args.push("z="+view["z"]);
-    hash_args.push("lat="+view["lat"].toFixed(4));
-    hash_args.push("lon="+view["lon"].toFixed(4));
-  }
-  var filters = state["filters"];
-  if(filters)
-  {
-      $.each(state["filters"], function(layer_id, layer_filters)
-      {
-        $.each(layer_filters, function(filter_id, filter_value)
+    var hash_args = [];
+    var view = state["view"];
+    if(view != undefined && view["z"] != undefined && view["lat"] != undefined && view["lon"] != undefined)
+    {
+      hash_args.push("z="+view["z"]);
+      hash_args.push("lat="+view["lat"].toFixed(4));
+      hash_args.push("lon="+view["lon"].toFixed(4));
+    }
+    var filters = state["filters"];
+    if(filters)
+    {
+        $.each(state["filters"], function(layer_id, layer_filters)
         {
-            hash_args.push(layer_id+":"+filter_id+"="+filter_value);
+          $.each(layer_filters, function(filter_id, filter_value)
+          {
+              hash_args.push(layer_id+":"+filter_id+"="+filter_value);
+          });
         });
-      });
+    }
+    if(hash_args.length > 0)
+    {
+      url += "#"+hash_args.join("&");
+    }
+    return url;
   }
-  if(hash_args.length > 0)
+  else
   {
-    url += "#"+hash_args.join("&");
+    return undefined;
   }
-  return url;
 };
 
 geodash.controllers["controller_main"] = function(
@@ -54,7 +63,10 @@ geodash.controllers["controller_main"] = function(
         $scope.$apply(function () {
             $scope.state = $.extend($scope.state, args);
             var url = buildPageURL($interpolate, map_config, $scope.state);
-            history.replaceState(state, "", url);
+            if(url != undefined)
+            {
+              history.replaceState(state, "", url);
+            }
             $scope.refreshMap($scope.state);
         });
     });
@@ -70,7 +82,10 @@ geodash.controllers["controller_main"] = function(
               $scope.state.filters[args["layer"]],
               args["filter"]);
             var url = buildPageURL($interpolate, map_config, $scope.state);
-            history.replaceState(state, "", url);
+            if(url != undefined)
+            {
+              history.replaceState(state, "", url);
+            }
             $scope.refreshMap($scope.state);
         });
     });
@@ -84,7 +99,10 @@ geodash.controllers["controller_main"] = function(
         $scope.$apply(function () {
             $scope.state.styles[args["layer"]] = args["style"];
             var url = buildPageURL($interpolate, map_config, $scope.state);
-            history.replaceState(state, "", url);
+            if(url != undefined)
+            {
+              history.replaceState(state, "", url);
+            }
             $scope.refreshMap($scope.state);
         });
     });
@@ -97,7 +115,10 @@ geodash.controllers["controller_main"] = function(
         var $scope = geodash.api.getScope("geodash-main");
         $scope.state.view = $.extend($scope.state.view, args);
         var url = buildPageURL($interpolate, map_config, $scope.state);
-        history.replaceState(state, "", url);
+        if(url != undefined)
+        {
+          history.replaceState(state, "", url);
+        }
         // $scope.$on already wraps $scope.$apply
         /*$scope.$apply(function () {
             $scope.state.view = $.extend($scope.state.view, args);

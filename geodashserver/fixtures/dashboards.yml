@@ -3,8 +3,10 @@
   fields:
     title: "Base"
     slug: base
-    center: "SRID=4326;POINT (0 0)"
     config:
+    advertised: False
+    published: False
+    center: "SRID=4326;POINT (0 0)"
 #- model: geodashserver.geodashdashboard
 #  pk: 1
 #  fields:

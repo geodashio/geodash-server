@@ -3,49 +3,58 @@ panes:
   - id: editor_basic
     label: Basic
     fields:
-      - title
-      - slug
-      - description
-      - logo.url
-      - logo.width
-      - logo.height
+      - config.title
+      - config.slug
+      - config.description
+      - config.pages
+  - id: editor_security
+    label: Security
+    fields:
+      - security.advertised
+      - security.published
   - id: editor_about
     label: About
     fields:
-      - about.title
+      - config.about.title
   - id: editor_welcome
     label: Welcome
     fields:
-      - welcome.title
-      - welcome.intro
-      - welcome.about
+      - config.welcome.title
+      - config.welcome.intro
+      - config.welcome.about
   - id: editor_view
     label: View
     fields:
-      - renderlayers
-      - view.latitude
-      - view.longitude
-      - view.zoom
-      - view.minZoom
-      - view.maxZoom
+      - config.renderlayers
+      - config.view.latitude
+      - config.view.longitude
+      - config.view.zoom
+      - config.view.minZoom
+      - config.view.maxZoom
   - id: editor_controls
     label: Controls
-    section: controls
+    fields:
+      - config.controls.attribution
+      - config.controls.calendar
+      - config.controls.filters
+      - config.controls.legend
+      - config.controls.sidebar
+      - config.controls.zoom
   - id: editor_overlays
     label: Static Overlays
     fields:
-      - overlays
+      - config.overlays
   - id: editor_featurelayers
     label: Feature Layers
     fields:
-      - featurelayers
+      - config.featurelayers
   - id: editor_baselayers
     label: Base Layers
     fields:
-      - view.baselayer
-      - baselayers
+      - config.view.baselayer
+      - config.baselayers
   - id: legend
     label: Legend
     fields:
-      - legend.title
-      - legendlayers
+      - config.legend.title
+      - config.legendlayers

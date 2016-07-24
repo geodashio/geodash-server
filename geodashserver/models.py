@@ -7,6 +7,8 @@ class GeoDashDashboard(models.Model):
     slug = models.CharField(max_length=255, null=True, blank=True)
     #template = models.CharField(max_length=255, null=True, blank=True)
     config = models.TextField(null=True, blank=True)
+    advertised = models.BooleanField()
+    published = models.BooleanField()
     center = models.PointField('Center', srid=4326, null=True)
     objects = models.GeoManager()
 
@@ -17,3 +19,9 @@ class GeoDashDashboard(models.Model):
         ordering = ("title",)
         verbose_name = ("GeoDash Dashboards")
         verbose_name_plural = ("GeoDash Dashboards")
+        permissions = (
+            ('view_geodashdashboard', 'View GeoDash Dashboard'),
+            # ('add_geodashdashboard', 'Add GeoDash Dashboard'),
+            # ('change_geodashdashboard', 'Change GeoDash Dashboard'),
+            # ('delete_geodashdashboard', 'Delete GeoDash Dashboard'),
+        )

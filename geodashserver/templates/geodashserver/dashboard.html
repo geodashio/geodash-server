@@ -13,8 +13,10 @@
       "data": {
         "editor": {{ editor_json|safe }},
         "map_config_schema": {{ map_config_schema_json|safe }},
+        "security_schema": {{ security_schema_json|safe }},
         "state_schema": {{ state_schema_json|safe }},
-        "dashboards_typeahead": {{ GEODASH_DASHBOARDS_TYPEAHEAD|safe }}
+        "dashboards_typeahead": {{ GEODASH_DASHBOARDS_TYPEAHEAD|safe }},
+        "security": {{ security_json|safe }}
       }
     }
 </script>

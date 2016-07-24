@@ -1,0 +1,9 @@
+---
+advertised:
+  type: boolean
+  label: Advertised
+  description: The layer is advertised through the web UI and API.
+published:
+  type: boolean
+  label: Published
+  description: The layer is published ("can be viewed by anonymous users" or "the public").

@@ -66,6 +66,7 @@ INSTALLED_APPS = (
     'leaflet',
     'corsheaders',
     'jquery',
+    'guardian'
 )
 
 GEODASH_SERVER_APPS = (
@@ -84,6 +85,15 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
+
+# Replacement of default authentication backend in order to support
+# permissions per object.
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'guardian.backends.ObjectPermissionBackend',
+)
+
+ANONYMOUS_USER_ID = -1
 
 ROOT_URLCONF = 'geodashserver.urls'
 
@@ -139,12 +149,20 @@ GEODASH_DNS_PREFETCH = [
     '//openstreetmap.org', '//openstreetmap.fr'
 ]
 #-----------------------------
-# Dependencies Management
-GEODASH_SERVER_STATIC_VERSION="0.0.1"
+# Static Management
+GEODASH_STATIC_MONOLITH_CSS = False
+GEODASH_STATIC_MONOLITH_JS = True
+
 GEODASH_STATIC_VERSION="0.0.1"
+GEODASH_SERVER_STATIC_VERSION="0.0.1"
+#-----------------------------
+# Dependencies Management
 GEODASH_STATIC_DEPS = {
     "angular": {
         "version": "1.4.0-beta.4"
+    },
+    "bootstrap": {
+        "version": "3.3.5"
     },
     "c3": {
         "version": "0.4.10"
@@ -161,6 +179,9 @@ GEODASH_STATIC_DEPS = {
     "jqueryui": {
         "version": "1.11.4",
         "theme": "cupertino"
+    },
+    "leaflet": {
+        "version": "1.0.0-b1"
     },
     "select2": {
         "version": "4.0.1"
@@ -179,6 +200,7 @@ GEODASH_STATIC_DEBUG = {
     "d3": False,
     "bootstrap": False,
     "jquery": False,
-    "leaflet": True
+    "leaflet": True,
+    'monolith' False
 }
 #######################################

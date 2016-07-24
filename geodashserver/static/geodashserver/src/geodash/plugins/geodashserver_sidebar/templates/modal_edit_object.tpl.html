@@ -21,7 +21,7 @@
         <h4
           id="myModalLabel"
           class="modal-title"
-          ng-bind-html="map_config_schema | extract : prefix_field : 'label' | prepend : 'Edit / ' | append : ' / ' : object.id | md2html"></h4>
+          ng-bind-html="schema | extract : prefix_field : 'label' | prepend : 'Edit / ' | append : ' / ' : object.id | md2html"></h4>
       </div>
       <div class="modal-body">
         <ul class="nav nav-tabs nav-justified" role="tablist">
@@ -72,8 +72,8 @@
                         placeholder="{{ object_field | extract : 'placeholder' }}"
                         data-geodash-field-type="{{ object_field | extract : 'type' }}"
                         ng-required="object_field | extract : 'required'"
-                        ng-value="modaleditobject_map_config_flat | extract : object_field_id_flat"
-                        ng-model="modaleditobject_map_config_flat[object_field_id_flat]"
+                        ng-value="modaleditobject_workspace_flat | extract : object_field_id_flat"
+                        ng-model="modaleditobject_workspace_flat[object_field_id_flat]"
                         ng-change="validateField(object_field_id_flat)">
                       <input
                         ng-if="object_field | extract : 'options' | default_if_undefined : [] | length | gt: 0"
@@ -82,8 +82,8 @@
                         type="text"
                         class="form-control"
                         style="display:none;"
-                        ng-value="modaleditobject_map_config_flat | extract : object_field_id_flat"
-                        ng-model="modaleditobject_map_config_flat[object_field_id_flat]"
+                        ng-value="modaleditobject_workspace_flat | extract : object_field_id_flat"
+                        ng-model="modaleditobject_workspace_flat[object_field_id_flat]"
                         ng-change="validateField(object_field_id_flat)">
                       <input
                         ng-if="object_field | extract : 'options' | default_if_undefined : [] | length | gt: 0"
@@ -95,7 +95,7 @@
                         data-geodash-field-type="{{ object_field | extract : 'type' }}"
                         data-initial-data="{{ object_field | extract : 'options' }}"
                         data-backend="editor-object-field-{{ object_field_id_flat }}-backend"
-                        ng-value="modaleditobject_map_config_flat | extract : object_field_id_flat">
+                        ng-value="modaleditobject_workspace_flat | extract : object_field_id_flat">
                       <div
                         ng-if="object_field | extract : 'options' | default_if_undefined : [] | length | gt: 0"
                         class="input-group-addon btn btn-primary btn-show-options"
@@ -130,9 +130,9 @@
                         data-geodash-field-type="{{ object_field | extract : 'type' }}"
                         ng-required="object_field | extract : 'required'"
                         style="max-width: 100%;"
-                        ng-model="modaleditobject_map_config_flat[object_field_id_flat]"
+                        ng-model="modaleditobject_workspace_flat[object_field_id_flat]"
                         ng-change="validateField(object_field_id_flat)"
-                        ng-bind-html="modaleditobject_map_config_flat | extract : object_field_id_flat"></textarea>
+                        ng-bind-html="modaleditobject_workspace_flat | extract : object_field_id_flat"></textarea>
                       <div
                         class="input-group-addon btn btn-danger btn-clear"
                         data-clear="#editor-object-field-{{ object_field_id_flat }}">
@@ -165,8 +165,8 @@
                       ng-required="object_field | extract : 'required'"
                       ng-attr-min="{{ object_field | extract : 'minValue' | default_if_undefined: '' }}"
                       ng-attr-max="{{ object_field | extract : 'maxValue' | default_if_undefined: '' }}"
-                      ng-value="modaleditobject_map_config_flat | extract : object_field_id_flat"
-                      ng-model="modaleditobject_map_config_flat[object_field_id_flat]"
+                      ng-value="modaleditobject_workspace_flat | extract : object_field_id_flat"
+                      ng-model="modaleditobject_workspace_flat[object_field_id_flat]"
                       ng-change="validateField(object_field_id_flat)">
                     <div
                       class="input-group-addon btn btn-danger btn-clear"
@@ -182,8 +182,8 @@
                     <label>
                       <input
                         type="checkbox"
-                        ng-checked="modaleditobject_map_config_flat | extract : object_field_id_flat"
-                        ng-model="modaleditobject_map_config_flat[object_field_id_flat]"
+                        ng-checked="modaleditobject_workspace_flat | extract : object_field_id_flat"
+                        ng-model="modaleditobject_workspace_flat[object_field_id_flat]"
                         ng-change="validateField(object_field_id_flat)"> {{ object_field | extract : 'label' }}
                     </label>
                   </div>
@@ -205,7 +205,7 @@
                       </div>
                       <pre class="form-control" style="height: auto;max-height: 100px;">
                         <span
-                          ng-repeat="x in modaleditobject_map_config | extract : field track by $index"
+                          ng-repeat="x in modaleditobject_workspace | extract : field track by $index"
                           class="input-group"
                           ng-bind-html="x">
                         </span>
@@ -235,7 +235,7 @@
                       </div>
                       <pre class="form-control" style="height: auto; max-width: 280px;max-height: 100px;">
                         <span
-                          ng-repeat="x in modaleditobject_map_config| extract : object_field_id track by $index"
+                          ng-repeat="x in modaleditobject_workspace| extract : object_field_id track by $index"
                           class="input-group"
                           style="cusor: default;"
                           ng-bind-html="x.title + ' ('+x.id+')'"
@@ -287,7 +287,7 @@
           data-intent-name="switchModal"
           data-intent-data="{{ html5data('switchModal', config.that.id, config.save.target, prefix_field) }}"
           data-intent-ctrl="{{ config.that.id }}"
-          ng-bind-html="map_config_schema | extract : prefix_field : 'label' | prepend : 'Back to ' | md2html"
+          ng-bind-html="schema | extract : prefix_field : 'label' | prepend : 'Back to ' | md2html"
         ></button>
       </div>
     </div>

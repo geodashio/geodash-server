@@ -22,7 +22,7 @@ def geodashserver(request):
             False),
         GEODASH_SERVER_STATIC_VERSION=settings.GEODASH_SERVER_STATIC_VERSION,
         GEODASH_SERVER_STATIC_DEBUG=settings.GEODASH_SERVER_STATIC_DEBUG,
-        GEODASH_DASHBOARDS_TYPEAHEAD=json.dumps([{'id': d.slug, 'text': d.title} for d in GeoDashDashboard.objects.all().order_by('title')])
+        GEODASH_DASHBOARDS_TYPEAHEAD=json.dumps([{'id': d.slug, 'text': d.title} for d in GeoDashDashboard.objects.filter(advertised=True, published=True).order_by('title')])
     )
 
     return defaults

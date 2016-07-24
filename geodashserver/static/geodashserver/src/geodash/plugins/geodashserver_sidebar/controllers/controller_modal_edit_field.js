@@ -8,8 +8,8 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
       "id": "geodash-modal-edit-field"
     },
     "workspace": {
-      "map_config": "modaleditfield_map_config",
-      "map_config_flat": "modaleditfield_map_config_flat"
+      "workspace": "modaleditfield_workspace",
+      "workspace_flat": "modaleditfield_workspace_flat"
     },
     "edit": {
       "target": "geodash-modal-edit-object",
@@ -17,8 +17,8 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
     "save": {
       "target": "geodash-sidebar-right",
       "fields":  {
-        "map_config": "modaleditfield_map_config",
-        "map_config_flat": "modaleditfield_map_config_flat"
+        "workspace": "modaleditfield_workspace",
+        "workspace_flat": "modaleditfield_workspace_flat"
       }
     }
   };
@@ -34,7 +34,7 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
   {
     $scope["value_edit_field"] = $("#modal-edit-field-"+field_flat).val();
 
-    $scope["modaleditfield_map_config_flat"][field_flat] = $scope["value_edit_field"];
+    $scope["modaleditfield_workspace_flat"][field_flat] = $scope["value_edit_field"];
 
     $scope.updateValue(
       field_flat,

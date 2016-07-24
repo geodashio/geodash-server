@@ -304,6 +304,30 @@ renderlayers:
   placeholder: 'Render Layers'
   required: true
   description: 'The layers in stack order to render; the first is on top; the last is on the bottom.'
+pages:
+  type: objectarray
+  label: Pages
+  placeholder: Pages
+  required: true
+  description: 'Pages.  Used for templating links to this and other systems.'
+  schema:
+    verbose_singular: Pages
+    verbose_plurl: Pages
+    fields:
+      -
+        id: id
+        type: text
+        label: ID
+        placeholder: ID
+        required: true
+        description: 'The id of your page.'
+      -
+        id: type
+        type: text
+        label: URL
+        placeholder: url
+        required: true
+        description: 'The url of your page.  Can use angular interpolation and filters.'
 legend:
   title:
     type: markdown

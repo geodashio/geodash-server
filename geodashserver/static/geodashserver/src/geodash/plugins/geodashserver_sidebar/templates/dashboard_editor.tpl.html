@@ -32,26 +32,26 @@
           class="form-group"
           style="margin:0; padding-top: 10px; padding-bottom: 10px;">
           <div
-            ng-if="map_config_schema | extract : field : 'type' | inArray: ['text', 'string', 'markdown', 'md']">
+              ng-if="schema | extract : field : 'type' | inArray: ['text', 'string', 'markdown', 'md']">
             <label
               for="editor-field-{{ field_flat }}"
               class="col-sm-3 control-label"
-              ng-bind-html="map_config_schema | extract : field : 'label'"></label>
+              ng-bind-html="schema | extract : field : 'label'"></label>
             <div class="col-sm-9">
               <div
-                ng-if="map_config_schema | extract : field : 'multiline' | default_if_undefined: 'false' | inArray: [false, 'false', 'no', 0]"
+                ng-if="schema | extract : field : 'multiline' | default_if_undefined: 'false' | inArray: [false, 'false', 'no', 0]"
                 class="input-group">
-                <div geodash-btn-info info="{{ map_config_schema | extract : field : 'description' }}"></div>
+                <div geodash-btn-info info="{{ schema | extract : field : 'description' }}"></div>
                 <input
                   id="editor-field-{{ field_flat }}"
                   name="editor-field-{{ field_flat }}"
                   type="text"
                   class="form-control"
-                  placeholder="{{ map_config_schema | extract : field : 'placeholder' }}"
-                  data-geodash-field-type="{{ map_config_schema | extract : field : 'type' }}"
-                  ng-required="map_config_schema | extract : field : 'required'"
-                  ng-value="map_config_flat | extract : field_flat"
-                  ng-model="map_config_flat[field_flat]"
+                  placeholder="{{ schema | extract : field : 'placeholder' }}"
+                  data-geodash-field-type="{{ schema | extract : field : 'type' }}"
+                  ng-required="schema | extract : field : 'required'"
+                  ng-value="workspace_flat | extract : field_flat"
+                  ng-model="workspace_flat[field_flat]"
                   ng-change="validateField(field_flat)">
                 <a
                   class="geodash-intent input-group-addon btn btn-primary btn-edit"
@@ -64,21 +64,21 @@
                 <div geodash-btn-clear target="#editor-field-{{ field_flat }}"></div>
               </div>
               <div
-                ng-if="map_config_schema | extract : field : 'multiline' | default_if_undefined: 'false' | inArray: [true, 'true', 'yes', 1]"
+                ng-if="schema | extract : field : 'multiline' | default_if_undefined: 'false' | inArray: [true, 'true', 'yes', 1]"
                 class="input-group">
-                <div geodash-btn-info info="{{ map_config_schema | extract : field : 'description' }}"></div>
+                <div geodash-btn-info info="{{ schema | extract : field : 'description' }}"></div>
                 <textarea
                   id="editor-field-{{ field_flat }}"
                   name="editor-field-{{ field_flat }}"
                   class="form-control"
-                  placeholder="{{ map_config_schema | extract : field : 'placeholder' }}"
+                  placeholder="{{ schema | extract : field : 'placeholder' }}"
                   rows="3"
-                  data-geodash-field-type="{{ map_config_schema | extract : field : 'type' }}"
-                  ng-required="map_config_schema | extract : field : 'required'"
+                  data-geodash-field-type="{{ schema | extract : field : 'type' }}"
+                  ng-required="schema | extract : field : 'required'"
                   style="max-width: 100%;"
-                  ng-model="map_config_flat[field_flat]"
+                  ng-model="workspace_flat[field_flat]"
                   ng-change="validateField(field_flat)"
-                  ng-bind-html="map_config_flat | extract : field_flat"></textarea>
+                  ng-bind-html="workspace_flat | extract : field_flat"></textarea>
                 <a
                   class="geodash-intent input-group-addon btn btn-primary btn-edit"
                   href="#"
@@ -91,61 +91,61 @@
               </div>
             </div>
             <div ng-show="form.$submitted || form.{{ field }}.$touched">
-              <span ng-show="form.{{ field }}.$error.required">{{ map_config_schema | extract : field : 'label' }} is required.</span>
+              <span ng-show="form.{{ field }}.$error.required">{{ schema | extract : field : 'label' }} is required.</span>
             </div>
           </div>
           <div
-            ng-if="map_config_schema | extract : field : 'type' | inArray: ['int', 'integer']">
+            ng-if="schema | extract : field : 'type' | inArray: ['int', 'integer']">
             <label
               for="editor-field-{{ field_flat }}"
               class="col-sm-3 control-label"
-              ng-bind-html="map_config_schema | extract : field : 'label'"></label>
+              ng-bind-html="schema | extract : field : 'label'"></label>
             <div class="col-sm-9 input-group">
-              <div geodash-btn-info info="{{ map_config_schema | extract : field : 'description' }}"></div>
+              <div geodash-btn-info info="{{ schema | extract : field : 'description' }}"></div>
               <input
                 id="editor-field-{{ field_flat }}"
                 name="editor-field-{{ field_flat }}"
                 type="number"
                 class="form-control"
-                placeholder="{{ map_config_schema | extract : field : 'placeholder' }}"
-                data-geodash-field-type="{{ map_config_schema | extract : field : 'type' }}"
-                ng-required="map_config_schema | extract : field : 'required'"
-                ng-attr-min="{{ map_config_schema | extract : field : 'minValue' | default_if_undefined: '' }}"
-                ng-attr-max="{{ map_config_schema | extract : field : 'maxValue' | default_if_undefined: '' }}"
-                ng-value="map_config_flat | extract : field_flat"
-                ng-model="map_config_flat[field_flat]"
+                placeholder="{{ schema | extract : field : 'placeholder' }}"
+                data-geodash-field-type="{{ schema | extract : field : 'type' }}"
+                ng-required="schema | extract : field : 'required'"
+                ng-attr-min="{{ schema | extract : field : 'minValue' | default_if_undefined: '' }}"
+                ng-attr-max="{{ schema | extract : field : 'maxValue' | default_if_undefined: '' }}"
+                ng-value="workspace_flat | extract : field_flat"
+                ng-model="workspace_flat[field_flat]"
                 ng-change="validateField(field_flat)">
               <div geodash-btn-clear target="#editor-field-{{ field_flat }}"></div>
             </div>
             <div ng-show="form.$submitted || form.{{ field }}.$touched">
-              <span ng-show="form.{{ field }}.$error.required">{{ map_config_schema | extract : field : 'label' }} is required.</span>
+              <span ng-show="form.{{ field }}.$error.required">{{ schema | extract : field : 'label' }} is required.</span>
             </div>
           </div>
           <div
-            ng-if="map_config_schema | extract : field : 'type' | inArray: ['boolean', 'checkbox']"
+            ng-if="schema | extract : field : 'type' | inArray: ['boolean', 'checkbox']"
             class="col-sm-offset-2 col-sm-10">
             <div class="checkbox">
               <label>
                 <input
                   type="checkbox"
-                  ng-checked="map_config_flat | extract : field_flat"
-                  ng-model="map_config_flat[field_flat]"
-                  ng-change="validateField(field_flat)"> {{ map_config_schema | extract : field : 'label' }}
+                  ng-checked="workspace_flat | extract : field_flat"
+                  ng-model="workspace_flat[field_flat]"
+                  ng-change="validateField(field_flat)"> {{ schema | extract : field : 'label' }}
               </label>
             </div>
           </div>
           <div
-            ng-if="map_config_schema | extract : field : 'type' | inArray: ['stringarray', 'textarray']">
+            ng-if="schema | extract : field : 'type' | inArray: ['stringarray', 'textarray']">
             <label
               for="editor-field-{{ field_flat }}"
               class="col-sm-3 control-label"
-              ng-bind-html="map_config_schema | extract : field : 'label'"></label>
+              ng-bind-html="schema | extract : field : 'label'"></label>
             <div class="col-sm-9">
               <div class="input-group">
-                <div geodash-btn-info info="{{ map_config_schema | extract : field : 'description' }}"></div>
+                <div geodash-btn-info info="{{ schema | extract : field : 'description' }}"></div>
                 <pre class="form-control" style="height: auto;max-height: 100px;">
                   <span
-                    ng-repeat="x in map_config | extract : field track by $index"
+                    ng-repeat="x in workspace | extract : field track by $index"
                     class="input-group"
                     ng-bind-html="x">
                   </span>
@@ -163,17 +163,17 @@
             </div>
           </div>
           <div
-            ng-if="map_config_schema | extract : field : 'type' | inArray: ['objectarray', 'objarray']">
+            ng-if="schema | extract : field : 'type' | inArray: ['objectarray', 'objarray']">
             <label
               for="editor-field-{{ field_flat }}"
               class="col-sm-3 control-label"
-              ng-bind-html="map_config_schema | extract : field : 'label'"></label>
+              ng-bind-html="schema | extract : field : 'label'"></label>
             <div class="col-sm-9">
               <div class="input-group">
-                <div geodash-btn-info info="{{ map_config_schema | extract : field : 'description' }}"></div>
+                <div geodash-btn-info info="{{ schema | extract : field : 'description' }}"></div>
                 <pre class="form-control" style="height: auto; max-width: 280px;max-height: 100px;">
                   <span
-                    ng-repeat="x in map_config| extract : field track by $index"
+                    ng-repeat="x in workspace| extract : field track by $index"
                     class="input-group"
                     ng-bind-html="x.title + ' ('+x.id+')'">
                   </span>
@@ -200,6 +200,7 @@
           type="button"
           class="btn btn-success"
           ng-click="saveConfig()"
+          ng-disabled="'change_geodashdashboard' | inArray : perms | not"
         >Save</button>
         <button
           type="button"

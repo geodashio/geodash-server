@@ -31,11 +31,179 @@ require.extensions['.yml'] = function (module, filename) {
   }
 };
 
-if(argv.debug)
+var geodash =
 {
-  gutil.log(gutil.colors.magenta('Debugging...'));
-  gutil.log(gutil.colors.magenta('Done with imports'));
-}
+  config: {}, // Project Name --> Config
+  var:
+  {
+    compile_js: undefined,
+    compile_less: undefined
+  },
+  resolveBuild: function(x){
+    return path.join(rootConfig['build'][x]['dest'], rootConfig['build'][x]['outfile']);
+  },
+  resolveVariable: function(x)
+  {
+    return geodash.var[x];
+  },
+  resolveResource: function(project, name, version)
+  {
+    var resourcePath = undefined;
+    if(geodash.config[project]['resources'] == undefined)
+    {
+      geodash.error("Missing project "+ project+" when trying to get resource "+name+".");
+    }
+    var config = geodash.config[project];
+    var resources = config['resources'];
+    for(var i = 0; i < resources.length; i++)
+    {
+      if(resources[i].name == name)
+      {
+        resourcePath = resources[i].path;
+        break;
+      }
+    }
+    if(version != undefined)
+    {
+      resourcePath = resourcePath.replace(new RegExp("{{(\\s+)version(\\s+)}}",'gi'), version);
+    }
+    resourcePath = path.join(config.path.base, resourcePath);
+    return resourcePath;
+  },
+  log: function(message)
+  {
+    if(argv.debug)
+    {
+      if(Array.isArray(message))
+      {
+        for(var i = 0; i < message.length; i++)
+        {
+          gutil.log(gutil.colors.magenta(message[i]));
+        }
+      }
+      else
+      {
+        gutil.log(gutil.colors.magenta(message));
+      }
+    }
+  },
+  error: function(message)
+  {
+    geodash.log(message);
+    throw message;
+  },
+  resolve: function(x)
+  {
+    if(Array.isArray(x.src))
+    {
+      var newSource = [];
+      for(var i = 0; i < x.src.length; i++)
+      {
+        var y = x.src[i];
+        if(typeof y == 'string')
+        {
+          newSource.push(y);
+        }
+        else
+        {
+          if(y.type == "resource" || y.type == "res")
+          {
+            var names = Array.isArray(y.names) ? y.names : [y.name];
+            for(var j = 0; j < names.length; j++)
+            {
+              var z = geodash.resolveResource(y.project, names[j], y.version);
+              if(z == undefined)
+              {
+                geodash.error("Resolved resource "+y.project+":"+y.name+" is undefined.");
+              }
+              newSource.push(z);
+            }
+          }
+          else if(y.type == "variable" || y.type == "var")
+          {
+            var z = geodash.resolveVariable(y.name);
+            if(Array.isArray(z))
+            {
+              newSource = newSource.concat(z);
+            }
+            else if(typeof y == 'string')
+            {
+              newSource.push(z);
+            }
+            else
+            {
+              geodash.error("Resolved variable "+y.name+" is not an array or string.");
+            }
+          }
+          else if(y.type == "build")
+          {
+            newSource.push(geodash.resolveBuild(y.name));
+          }
+          else
+          {
+            geodash.error("Unknown source type (\""+y.type+"\").  Can be either string, resource, variable, or build.");
+          }
+        }
+      }
+      geodash.log(JSON.stringify(x.src));
+      newSource = newSource.map(function(a){
+        geodash.log(a);
+        return (a[0] == "/" || a[0] == "." || a[0] == "~") ? a : ("./" + a);
+      });
+      x.src = newSource.map(expandHomeDir);
+      geodash.log(JSON.stringify(x.src));
+    }
+    else
+    {
+      x.src = expandHomeDir(x.src);
+    }
+    x.dest = expandHomeDir(x.dest);
+    return x;
+  },
+  compile: function(t)
+  {
+    t = geodash.resolve(t);
+    geodash.log(["", "geodash.compile(\""+t.name+"\")"]);
+    if(t.type=="js")
+    {
+      return gulp.src(t.src, {base: './'})
+        .pipe(concat(t.outfile))
+        .pipe(gulp.dest(t.dest))
+        .pipe(rename({ extname: '.min.js'}))
+        .pipe(uglify())
+        .pipe(gulp.dest(t.dest));
+    }
+    else if(t.type=="css")
+    {
+      return gulp.src(t.src)
+        .pipe(concat(t.outfile))
+        .pipe(gulp.dest(t.dest));
+    }
+    else if(t.type=="less")
+    {
+      return gulp.src(t.src, {base: './'})
+        .pipe(less({paths: t.paths}))
+        .pipe(concat(t.outfile))
+        .pipe(gulp.dest(t.dest));
+    }
+    else if(t.type=="template"||t.type=="templates")
+    {
+      return gulp.src(t.src)
+        .pipe(templateCache('templates.js', {
+          templateHeader: 'geodash.templates = {};\n',
+          templateBody: 'geodash.templates["<%= url %>"] = "<%= contents %>";',
+          templateFooter: '\n'
+        }))
+        .pipe(gulp.dest(t.dest));
+    }
+    else
+    {
+      return undefined;
+    }
+  }
+};
+
+geodash.log(['Debugging...', 'Done with imports']);
 
 var collect_files = function(basePath, plugin, sType)
 {
@@ -94,10 +262,7 @@ var flatten_configs = function(n)
   return configs;
 };
 
-if(argv.debug)
-{
-  gutil.log(gutil.colors.magenta('Initialized common functions'));
-}
+geodash.log('Initialized common functions');
 
 var rootConfig = require("./config.yml");
 var configs = flatten_configs(load_config("./config.yml"));
@@ -116,10 +281,7 @@ var compile_less = [];
 var test_js = [];
 var compilelist = [];
 
-if(argv.debug)
-{
-  gutil.log(gutil.colors.magenta('Loaded configs and ready to build pipelines.'));
-}
+geodash.log('Loaded configs and ready to build pipelines.');
 
 for(var i = 0; i < configs.length; i++)
 {
@@ -128,11 +290,14 @@ for(var i = 0; i < configs.length; i++)
     'name':config.name,
     'version': config.version,
     'description': config.description});
-  if(argv.debug)
-  {
-    gutil.log(gutil.colors.magenta('########'));
-    gutil.log(gutil.colors.magenta('Project '+i+': '+config.name));
-  }
+
+  geodash.config[config.name] = config;
+  //geodash.resources[config.name] = config.resources;
+
+  geodash.log(['########', 'Project '+i+': '+config.name]);
+
+
+
 
   var path_plugins = path.join(config.path.base, config.path.geodash, "plugins")
 
@@ -146,25 +311,13 @@ for(var i = 0; i < configs.length; i++)
 
   for(var j = 0; j < config["plugins"].length; j++)
   {
-    if(argv.debug)
-    {
-      gutil.log(gutil.colors.magenta('Plugin '+i+'.'+j+': '+config["plugins"][j]));
-    }
-
+    geodash.log('Plugin '+i+'.'+j+': '+config["plugins"][j]);
     var pluginPath = expandHomeDir(path.join(path_plugins, config["plugins"][j], "config.yml"));
-    if(argv.debug)
-    {
-      gutil.log(gutil.colors.magenta('Loding plugin from '+pluginPath));
-    }
+    geodash.log('Loding plugin from '+pluginPath);
     var geodash_plugin = require(expandHomeDir(pluginPath[0] == "/" ? pluginPath : ("./"+ pluginPath)));
     if(geodash_plugin == null || geodash_plugin == undefined)
     {
-      var errorMessage = 'Could not load plugin '+i+'.'+j+' '+ config["plugins"][j];
-      if(argv.debug)
-      {
-        gutil.log(gutil.colors.magenta(errorMessage));
-      }
-      throw errorMessage;
+      geodash.error('Could not load plugin '+i+'.'+j+' '+ config["plugins"][j]);
     }
     geodash_plugin["project"] = config.name;
     geodash_plugin["id"] = config["plugins"][j];
@@ -219,30 +372,10 @@ test_js = test_js.concat(
     compile_directives,
     compile_controllers);
 
-compile_less = [].concat(
-  rootConfig["less"]["pre"],
-  compile_less
-);
+geodash.var['compile_js'] = compile_js;
+geodash.var['compile_less'] = compile_less;
 
-compilelist = compilelist.concat([
-    {
-        "name": "main_js",
-        "type": "js",
-        "src": compile_js,
-        "outfile":"main.js",
-        "dest":"./build/js/"
-    },
-    {
-        "name": "main_less",
-        "type": "less",
-        "src": compile_less,
-        "outfile": rootConfig["less"]["outfile"],
-        "dest": rootConfig["less"]["dest"],
-        "paths": rootConfig["less"]["paths"]
-    },
-]);
 compilelist = compilelist.concat(rootConfig["compiler"]["list"]);
-
 compilelist = compilelist.map(function(obj){
   if(Array.isArray(obj['src']))
   {
@@ -256,15 +389,9 @@ compilelist = compilelist.map(function(obj){
   return obj;
 });
 
-var copylist =
-[
-];
+var copylist = [];
 
-if(argv.debug)
-{
-  gutil.log(gutil.colors.magenta('Compilelist built.'));
-  gutil.log(gutil.colors.magenta(yaml.stringify(compilelist, 8, 2)));
-}
+geodash.log(['Compilelist built.', yaml.stringify(compilelist, 8, 2)]);
 
 gulp.task('compile', ['clean', 'geodash:schema', 'geodash:templates'], function(){
     for(var i = 0; i < compilelist.length; i++)
@@ -316,11 +443,7 @@ gulp.task('geodash:meta', ['clean'], function(cb){
   lines.push("geodash.meta.projects = "+JSON.stringify(geodash_meta_projects)+";");
   lines.push("geodash.meta.plugins = "+JSON.stringify(geodash_meta_plugins)+";");
   var contents = lines.join("\n");
-  if(argv.debug)
-  {
-    gutil.log(gutil.colors.magenta('Contents of GeoDash meta.js'));
-    gutil.log(gutil.colors.magenta(contents));
-  }
+  geodash.log(['Contents of GeoDash meta.js', contents]);
   if (!fs.existsSync('./build')){ fs.mkdirSync('./build'); }
   if (!fs.existsSync('./build/meta')){ fs.mkdirSync('./build/meta'); }
   fs.writeFile('./build/meta/meta.js',contents, cb);
@@ -336,11 +459,7 @@ gulp.task('geodash:schema', ['clean'], function(cb){
     schema = merge(schema, plugin_schema);
   }
 
-  if(argv.debug)
-  {
-    gutil.log(gutil.colors.magenta('Schema'));
-    gutil.log(gutil.colors.magenta(yaml.stringify(schema, 8, 2)));
-  }
+  geodash.log(['Schema', yaml.stringify(schema, 8, 2)]);
 
   if (!fs.existsSync('./build')){ fs.mkdirSync('./build'); }
   if (!fs.existsSync('./build/schema')){ fs.mkdirSync('./build/schema'); }
@@ -358,6 +477,30 @@ gulp.task('geodash:templates', ['clean'], function(){
         templateFooter: '\n'
       }))
       .pipe(gulp.dest("./build/templates/"));
+});
+
+gulp.task('compile:main.css', ['clean'], function(){
+  return geodash.compile(rootConfig['build']['main.css']);
+});
+
+gulp.task('compile:monolith.css', ['clean','compile:main.css'], function(){
+  return geodash.compile(rootConfig['build']['monolith.css']);
+});
+
+gulp.task('compile:polyfill.js', ['clean'], function(){
+  return geodash.compile(rootConfig['build']['polyfill.js']);
+});
+
+gulp.task('compile:main.js', ['clean', 'geodash:templates'], function(){
+  return geodash.compile(rootConfig['build']['main.js']);
+});
+
+gulp.task('compile:monkeypatch.js', ['clean'], function(){
+  return geodash.compile(rootConfig['build']['monkeypatch.js']);
+});
+
+gulp.task('compile:monolith.js', ['clean', 'geodash:templates', 'compile:polyfill.js', 'compile:main.js', 'compile:monkeypatch.js'], function(){
+  return geodash.compile(rootConfig['build']['monolith.js']);
 });
 
 gulp.task('copy', ['clean'], function(){
@@ -391,7 +534,14 @@ gulp.task('default', [
   'geodash:meta',
   'geodash:schema',
   'geodash:templates',
-  'compile']);
+  'compile',
+  'compile:main.css',
+  'compile:monolith.css',
+  'compile:polyfill.js',
+  'compile:main.js',
+  'compile:monkeypatch.js',
+  'compile:monolith.js'
+]);
 
 
 gulp.task('bootstrap:clean', function() {

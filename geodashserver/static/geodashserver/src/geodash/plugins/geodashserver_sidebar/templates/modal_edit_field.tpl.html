@@ -13,7 +13,7 @@
         <h4
           id="myModalLabel"
           class="modal-title"
-          ng-bind-html="map_config_schema | extract : field : 'label' | prepend : 'Edit / ' | md2html"></h4>
+          ng-bind-html="schema | extract : field : 'label' | prepend : 'Edit / ' | md2html"></h4>
       </div>
       <div class="modal-body">
         <ul class="nav nav-tabs nav-justified" role="tablist">
@@ -28,21 +28,21 @@
             class="tab-pane fade"
             style="padding: 10px;">
             <div
-              ng-if="map_config_schema | extract : field : 'type' | inArray: ['text', 'string', 'markdown', 'md']">
+              ng-if="schema | extract : field : 'type' | inArray: ['text', 'string', 'markdown', 'md']">
               <textarea
                 id="modal-edit-field-{{ field_flat }}"
                 name="modal-edit-field-{{ field_flat }}"
                 class="form-control"
-                placeholder="{{ map_config_schema | extract : field : 'placeholder' }}"
+                placeholder="{{ schema | extract : field : 'placeholder' }}"
                 rows="15"
-                data-geodash-field-type="{{ map_config_schema | extract : field : 'type' }}"
-                ng-required="map_config_schema | extract : field : 'required'"
+                data-geodash-field-type="{{ schema | extract : field : 'type' }}"
+                ng-required="schema | extract : field : 'required'"
                 style="max-width: 100%;"
                 ng-model="value_edit_field"
                 ng-change="validateModalField(field_flat)"></textarea>
             </div>
             <div
-              ng-if="map_config_schema | extract : field : 'type' | inArray: ['textarray', 'stringarray']">
+              ng-if="schema | extract : field : 'type' | inArray: ['textarray', 'stringarray']">
               <div class="input-group">
                 <input
                   id="editor-field-{{ field_flat }}-backend"
@@ -54,14 +54,14 @@
                   class="input-group-addon btn btn-primary"
                   data-toggle="tooltip"
                   data-placement="bottom"
-                  ng-attr-title="{{ map_config_schema | extract : field : 'description' }}">
+                  ng-attr-title="{{ schema | extract : field : 'description' }}">
                   <i class="fa fa-info-circle"></i>
                 </div>
                 <div
                   id="editor-field-{{ field_flat }}-label"
                   name="editor-field-{{ field_flat }}-label"
                   class="input-group-addon"
-                  ng-bind-html="map_config_schema | extract : field : 'label'">
+                  ng-bind-html="schema | extract : field : 'label'">
                 </div>
                 <input
                   id="editor-field-{{ field_flat }}"
@@ -69,8 +69,8 @@
                   type="text"
                   class="typeahead form-control"
                   style="height: auto;"
-                  data-geodash-field-type="{{ map_config_schema | extract : field : 'type' }}"
-                  ng-required="map_config_schema | extract : field : 'required'"
+                  data-geodash-field-type="{{ schema | extract : field : 'type' }}"
+                  ng-required="schema | extract : field : 'required'"
                   aria-describedby="editor-field-{{ field_flat }}-label"
                   data-initial-data="layers"
                   data-backend="editor-field-{{ field_flat }}-backend"
@@ -103,7 +103,7 @@
               </div>
               <br>
               <div
-                ng-repeat="x in modaleditfield_map_config | extract : field track by $index"
+                ng-repeat="x in modaleditfield_workspace | extract : field track by $index"
                 class="input-group"
                 style="margin-bottom: 4px;">
                 <div
@@ -137,13 +137,13 @@
               </div>
             </div>
             <div
-              ng-if="map_config_schema | extract : field : 'type' | inArray: ['objectarray', 'objarray']">
+              ng-if="schema | extract : field : 'type' | inArray: ['objectarray', 'objarray']">
               <div>
                 <div
                   class="btn btn-primary"
                   data-toggle="tooltip"
                   data-placement="bottom"
-                  ng-attr-title="{{ map_config_schema | extract : field : 'description' }}">
+                  ng-attr-title="{{ schema | extract : field : 'description' }}">
                   <i class="fa fa-info-circle"></i>
                 </div>
                 <div
@@ -159,7 +159,7 @@
               </div>
               <br>
               <div
-                ng-repeat="x in modaleditfield_map_config | extract : field track by $index"
+                ng-repeat="x in modaleditfield_workspace | extract : field track by $index"
                 class="input-group"
                 style="margin-bottom: 4px;">
                 <div
@@ -230,7 +230,7 @@
           data-intent-name="saveAndHide"
           data-intent-data="{{ html5data('saveAndHide', config.that.id, config.save.target, config.save.fields) }}"
           data-intent-ctrl="{{ config.that.id }}"
-          ng-bind-html="map_config_schema | extract : field : 'label' | prepend : 'Save ' | md2html"
+          ng-bind-html="schema | extract : field : 'label' | prepend : 'Save ' | md2html"
         ></button>
         <button
           type="button"

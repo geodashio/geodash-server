@@ -41,10 +41,10 @@ def get_month_number(month):
     return month_num
 
 
-def build_initial_state(dashboard_config, slug=None):
+def build_initial_state(dashboard_config, page="dashboard", slug=None):
 
     initial_state = {
-        "page": "dashboard",
+        "page": page,
         "slug": (slug or dashboard_config["slug"]),
         "view": {
             "lat": dashboard_config["view"]["latitude"],
