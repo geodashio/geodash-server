@@ -14,7 +14,7 @@ from django.template import RequestContext
 from django.template.loader import get_template
 
 from guardian.models import UserObjectPermission
-from guardian.shortcuts import get_perms
+from guardian.shortcuts import get_users_with_perms, get_perms, remove_perm
 
 try:
     import simplejson as json
@@ -117,14 +117,23 @@ def geodash_dashboard(request, slug=None, template="geodashserver/dashboard.html
     editor_yml = get_template(editor_template).render({})
     editor = yaml.load(editor_yml)
 
+    allperms = get_users_with_perms(map_obj, attach_perms=True)
+    print allperms
     security = {
         "advertised": map_obj.advertised,
-        "published": map_obj.published
+        "published": map_obj.published,
+        'view_geodashdashboard': sorted([x.username for x in allperms if 'view_geodashdashboard' in allperms[x]]),
+        'change_geodashdashboard':sorted([x.username for x in allperms if 'change_geodashdashboard' in allperms[x]]),
+        'delete_geodashdashboard':sorted([x.username for x in allperms if 'delete_geodashdashboard' in allperms[x]])
     }
     security_schema = yaml.load(get_template("geodashserver/security.yml").render({}))
 
     initial_state = build_initial_state(map_config, page="dashboard", slug=slug)
     state_schema = build_state_schema()
+
+    users = []
+    if request.user.has_perm("change_geodashdashboard", map_obj):
+        users =[{'id': x.username, 'text': x.username} for x in User.objects.exclude(username='AnonymousUser')]
 
     ctx = {
         "pages_json": json.dumps(pages),
@@ -144,8 +153,9 @@ def geodash_dashboard(request, slug=None, template="geodashserver/dashboard.html
         "security_schema_json": json.dumps(security_schema),
         "init_function": "init_dashboard",
         "geodash_main_id": "geodash-main",
-        "include_sidebar_right": request.user.is_authenticated(),
-        "perms_json": json.dumps(get_perms(request.user, map_obj))
+        "include_sidebar_right": request.user.has_perm("change_geodashdashboard", map_obj),
+        "perms_json": json.dumps(get_perms(request.user, map_obj)),
+        "users": json.dumps(users)
     }
 
     return render_to_response(template, RequestContext(request, ctx))
@@ -181,7 +191,8 @@ def geodash_dashboard_config_new(request):
     if request.method != 'POST':
         raise Http404("Can only use POST")
 
-    config = yaml.load(request.body)
+    content = json.loads(request.body)
+    config = content['config']
     slug = config.pop('slug', None)
 
     map_obj = None
@@ -199,14 +210,14 @@ def geodash_dashboard_config_new(request):
         }
     else:
         owner = request.user
-
         title = config.pop('title', None)
+        security = content['security']
         map_obj = GeoDashDashboard(
           slug=slug,
           title=title,
           config=yaml.dump(config),
-          advertised=False,
-          published=False)
+          advertised=(security.get('advertised', False) in ["true", "t", "1", "yes", "y", True]),
+          published=(security.get('published', False) in ["true", "t", "1", "yes", "y", True]))
         map_obj.save()
 
         for perm in ["view_geodashdashboard", "change_geodashdashboard", "delete_geodashdashboard"]:
@@ -221,7 +232,7 @@ def geodash_dashboard_config_new(request):
         })
         response_json = {
             'success': True,
-            'map_config': config
+            'config': config
         }
 
     return HttpResponse(json.dumps(response_json, default=jdefault), content_type="application/json")
@@ -244,11 +255,37 @@ def geodash_dashboard_config_save(request, slug=None):
 
     if request.user.has_perm("change_geodashdashboard", map_obj):
 
-        config = yaml.load(request.body)
+        print request.body
+        content = json.loads(request.body)
+        config = content['config']
         map_obj.slug = config.pop('slug', None)
         map_obj.title = config.pop('title', None)
         map_obj.config = yaml.dump(config)
+        security = content['security'];
+        map_obj.advertised=(security.get('advertised', False) in ["true", "t", "1", "yes", "y", True]);
+        map_obj.published=(security.get('published', False) in ["true", "t", "1", "yes", "y", True]);
         map_obj.save()
+
+        perms = {
+            'view_geodashdashboard': security.get("view_geodashdashboard", []),
+            'change_geodashdashboard': security.get("change_geodashdashboard", []),
+            'delete_geodashdashboard': security.get("delete_geodashdashboard", [])
+        }
+        currentUsers = get_users_with_perms(map_obj)
+        for perm in ["view_geodashdashboard", "change_geodashdashboard", "delete_geodashdashboard"]:
+            # Remove Old Permissions
+            for user in currentUsers:
+                username = user.username
+                if (username not in perms[perm]) and user.has_perm(perm, map_obj):
+                    remove_perm(perm, user, map_obj)
+
+            # Add New Permissions
+            for username in perms[perm]:
+                user = User.objects.get(username=username)
+                UserObjectPermission.objects.assign_perm(
+                    perm,
+                    user=user,
+                    obj=map_obj)
 
         config.update({
             'slug': map_obj.slug,
@@ -256,7 +293,7 @@ def geodash_dashboard_config_save(request, slug=None):
         })
         response_json = {
             'success': True,
-            'map_config': config
+            'config': config
         }
     else:
         response_json = {

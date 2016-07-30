@@ -3,6 +3,7 @@ var geodash = {
   'directives': {},
   'controllers': {},
   'filters': {},
+  'handlers': {},
   'vecmath': {},
   'tilemath': {},
   'api': {},
@@ -48,10 +49,9 @@ geodash.init.directives = function(app)
 geodash.init.listeners = function()
 {
   $('body').on('click', '.btn-clear', function(event) {
-
     // "this" doesn't always point to what you think it does,
     // that's why need to use event.currentTarget
-    var selector = $(event.currentTarget).attr('data-clear');
+    var selector = $(event.currentTarget).attr('data-target');
 
     try{ $(selector).typeahead('close'); }catch(err){};
 
@@ -66,6 +66,24 @@ geodash.init.listeners = function()
         backend.trigger('input');
         backend.change();
       }
+    });
+  });
+  $('body').on('click', '.btn-off', function(event) {
+    var selector = $(event.currentTarget).attr('data-target');
+    $(selector).each(function(){
+      var input = $(this);
+      input.val("false");
+      input.trigger('input');
+      input.change();
+    });
+  });
+  $('body').on('click', '.btn-on', function(event) {
+    var selector = $(event.currentTarget).attr('data-target');
+    $(selector).each(function(){
+      var input = $(this);
+      input.val("true");
+      input.trigger('input');
+      input.change();
     });
   });
 
@@ -131,7 +149,6 @@ geodash.init.typeahead = function($element)
     var template_empty = s.data('template-empty');
     var template_suggestion = s.data('template-suggestion');
 
-
     var bloodhoundData = [];
     if(angular.isString(initialData))
     {
@@ -161,12 +178,27 @@ geodash.init.typeahead = function($element)
       }
       else
       {
-        bloodhoundData = geodash.initial_data["data"][initialData];
+        bloodhoundData = [].concat(geodash.initial_data["data"][initialData]);
+        for(var i = 0; i < bloodhoundData.length; i++)
+        {
+          if(angular.isString(bloodhoundData[i]))
+          {
+            bloodhoundData[i] = {'id': bloodhoundData[i], 'text': bloodhoundData[i]};
+          }
+        }
       }
     }
     else if(Array.isArray(initialData))
     {
-      bloodhoundData = $.map(initialData, function(x, i){ return {'id': x, 'text': x}; });
+      bloodhoundData = [].concat(initialData);
+      for(var i = 0; i < bloodhoundData.length; i++)
+      {
+        if(angular.isString(bloodhoundData[i]))
+        {
+          bloodhoundData[i] = {'id': bloodhoundData[i], 'text': bloodhoundData[i]};
+        }
+      }
+      //bloodhoundData = $.map(initialData, function(x, i){ return {'id': x, 'text': x}; });
     }
 
     if(angular.isDefined(bloodhoundData) && bloodhoundData.length > 0)
@@ -597,6 +629,46 @@ geodash.api.updateValue = function(field_flat, source, target)
     else
     {
       target[finalKey] = source[field_flat];
+    }
+  }
+};
+geodash.api.setValue = function(field_flat, value, target)
+{
+  // Update map_config
+  if(field_flat.indexOf("__") == -1)
+  {
+    target[field_flat] = value;
+  }
+  else
+  {
+    var keyChain = field_flat.split("__");
+    for(var j = 0; j < keyChain.length -1 ; j++)
+    {
+      var newKey = keyChain[j];
+      if(!(newKey in target))
+      {
+        var iTest = -1;
+        try{iTest = parseInt(keyChain[j+1], 10);}catch(err){iTest = -1;};
+        target[newKey] = iTest >= 0 ? [] : {};
+      }
+      target = target[newKey];
+    }
+    var finalKey = keyChain[keyChain.length-1];
+    if(angular.isArray(target))
+    {
+      if(finalKey >= target.length)
+      {
+        var zeros = finalKey - target.length;
+        for(var k = 0; k < zeros; k++ )
+        {
+          target.push({});
+        }
+        target.push(value);
+      }
+    }
+    else
+    {
+      target[finalKey] = value;
     }
   }
 };
@@ -1756,9 +1828,9 @@ geodashserver.html5data = function()
           "field_flat": field_flat
         }
         data["dynamic"] = {
-          "value_edit_field": ["source", "map_config", field],
-          "map_config_schema": ["source", "map_config_schema"],
-          "map_config_schema_flat": ["source", "map_config_schema_flat"]
+          "value_edit_field": ["source", "workspace", "config", field]
+          //"schema": ["source", "schema"],
+          //"schema_flat": ["source", "schema_flat"]
         };
       }
       else if(id_show == "geodash-modal-edit-object")
@@ -1771,9 +1843,9 @@ geodashserver.html5data = function()
         data["dynamic"] = {
           "modaleditobject_workspace": ["source", "modaleditfield_workspace"],
           "modaleditobject_workspace_flat": ["source", "modaleditfield_workspace_flat"],
-          "object_schema": ["source", "map_config_schema", field, "schema"],
-          "map_config_schema": ["source", "map_config_schema"],
-          "map_config_schema_flat": ["source", "map_config_schema_flat"]
+          "modaleditobject_schema": ["source", "modaleditfield_schema"],
+          "modaleditobject_schema_flat": ["source", "modaleditfield_schema_flat"],
+          "object_schema": ["source", "schema", field, "schema"]
         };
         if(angular.isNumber(objectIndex))
         {
@@ -1803,11 +1875,11 @@ geodashserver.html5data = function()
           "field_flat":field_flat
         },
         "dynamic": {
-          "value_edit_field": ["source", "map_config", field],
-          "modaleditfield_workspace": ["source", "map_config"],
-          "modaleditfield_workspace_flat": ["source", "map_config_flat"],
-          "map_config_schema": ["source", "map_config_schema"],
-          "map_config_schema_flat": ["source", "map_config_schema_flat"]
+          "value_edit_field": ["source", "workspace", field],
+          "modaleditfield_workspace": ["source", "workspace"],
+          "modaleditfield_workspace_flat": ["source", "workspace_flat"],
+          "modaleditfield_schema": ["source", "schema"],
+          "modaleditfield_schema_flat": ["source", "schema_flat"]
         }
       };
     }
@@ -1819,8 +1891,8 @@ geodashserver.html5data = function()
       return {
         "id": id,
         "dynamic": {
-          "object": ["source", "map_config_flat", field_flat, index],
-          "object_schema": ["source", "map_config_schema", field, "schema"]
+          "object": ["source", "workspace_flat", field_flat, index],
+          "object_schema": ["source", "schema", field, "schema"]
         }
       };
     }
@@ -1942,13 +2014,14 @@ geodash.init_dashboard = function(appName, mainElement)
 
 geodash.meta = {};
 geodash.meta.projects = [{"name":"geodash","version":"0.0.1","description":"geodash 0.0.1"},{"name":"geodashserver","version":"0.0.1","description":"GeoDash Server 1.x"}];
-geodash.meta.plugins = [{"controllers":["controller_base.js"],"directives":["svg.js","onLinkDone.js","onRepeatDone.js","geodashModalDashboardConfig.js","tab.js","geodashBtnClose.js","geodashBtnInfo.js","geodashBtnClear.js"],"enumerations":["dates.js"],"templates":["geodash_modal_dashboard_config.tpl.html","geodash_tab.tpl.html","geodash_btn_close.tpl.html","geodash_btn_info.tpl.html","geodash_btn_clear.tpl.html"],"filters":["default.js","md2html.js","percent.js","tabLabel.js","as_float.js","add.js","title.js","as_array.js","sortItemsByArray.js","breakpoint.js","breakpoints.js","position_x.js","width_x.js","length.js","layer_is_visible.js","common/append.js","common/default_if_undefined.js","common/default_if_undefined_or_blank.js","common/extract.js","common/inArray.js","common/not.js","common/prepend.js","common/ternary.js","common/ternary_defined.js","common/yaml.js","array/join.js","array/first.js","array/last.js","array/choose.js","format/formatBreakPoint.js","format/formatFloat.js","format/formatInteger.js","format/formatArray.js","format/formatMonth.js m","math/eq.js","math/lte.js","math/gte.js","math/gt.js","string/replace.js","string/split.js","url/url_shapefile.js","url/url_geojson.js","url/url_kml.js","url/url_describefeaturetype.js"],"schemas":["base.yml","baselayers.yml","featurelayers.yml","controls.yml","view.yml","pages.yml"],"project":"geodash","id":"base"},{"controllers":["controller_legend.js"],"directives":["geodashModalLayerCarto.js","geodashModalLayerMore.js","geodashModalLayerConfig.js","geodashSymbolCircle.js","geodashSymbolEllipse.js","geodashSymbolGraduated.js","geodashSymbolGraphic.js","geodashLegendBaselayers.js","geodashLegendFeaturelayers.js"],"templates":["modal/geodash_modal_layer_carto.tpl.html","modal/geodash_modal_layer_more.tpl.html","modal/geodash_modal_layer_config.tpl.html","symbol/symbol_circle.tpl.html","symbol/symbol_ellipse.tpl.html","symbol/symbol_graduated.tpl.html","symbol/symbol_graphic.tpl.html","legend_baselayers.tpl.html","legend_featurelayers.tpl.html"],"less":["legend.less"],"schemas":["legend_schema.yml"],"project":"geodash","id":"legend"},{"controllers":[],"directives":["geodashModalWelcome.js"],"templates":["modal/geodash_modal_welcome.tpl.html"],"project":"geodash","id":"welcome"},{"controllers":[],"directives":["geodashModalAbout.js"],"templates":["geodash_modal_about.tpl.html"],"project":"geodash","id":"about"},{"controllers":[],"directives":["geodashModalDownload.js"],"templates":["geodash_modal_download.tpl.html"],"project":"geodash","id":"download"},{"controllers":[],"directives":["geodashMapOverlays.js"],"templates":["map_overlays.tpl.html"],"less":["map_overlays.less"],"schemas":["map_overlays_schema.yml"],"project":"geodash","id":"overlays"},{"controllers":["controller_map_map.js"],"directives":[],"templates":[],"less":["main_map.less"],"project":"geodashserver","id":"map_map"},{"controllers":[],"directives":["geodashserverModalWelcome.js"],"templates":["modal_welcome_geodashserver.tpl.html"],"less":["geodashserver_welcome.less"],"project":"geodashserver","id":"geodashserver_welcome"},{"controllers":["controller_sidebar_geodashserver.js","controller_modal_edit_field.js","controller_modal_edit_object.js"],"directives":["geodashDashboardEditor.js","geodashModalEditField.js","geodashModalEditObject.js"],"templates":["dashboard_editor.tpl.html","modal_edit_field.tpl.html","modal_edit_object.tpl.html"],"less":["sidebar.less","sidebar-toggle.less"],"project":"geodashserver","id":"geodashserver_sidebar"},{"controllers":["controller_main.js"],"directives":[],"templates":[],"project":"geodashserver","id":"main"}];
+geodash.meta.plugins = [{"controllers":["controller_base.js"],"directives":["svg.js","onLinkDone.js","onRepeatDone.js","geodashModalDashboardConfig.js","tab.js","geodashBtnClose.js","geodashBtnInfo.js","geodashBtn.js"],"enumerations":["dates.js"],"templates":["geodash_modal_dashboard_config.tpl.html","geodash_tab.tpl.html","geodash_btn_close.tpl.html","geodash_btn_info.tpl.html","geodash_btn.tpl.html"],"filters":["default.js","md2html.js","percent.js","tabLabel.js","as_float.js","add.js","title.js","as_array.js","sortItemsByArray.js","breakpoint.js","breakpoints.js","position_x.js","width_x.js","length.js","layer_is_visible.js","common/append.js","common/default_if_undefined.js","common/default_if_undefined_or_blank.js","common/extract.js","common/inArray.js","common/not.js","common/prepend.js","common/parseTrue.js","common/ternary.js","common/ternary_defined.js","common/yaml.js","array/join.js","array/first.js","array/last.js","array/choose.js","format/formatBreakPoint.js","format/formatFloat.js","format/formatInteger.js","format/formatArray.js","format/formatMonth.js","math/eq.js","math/lte.js","math/gte.js","math/gt.js","string/replace.js","string/split.js","url/url_shapefile.js","url/url_geojson.js","url/url_kml.js","url/url_describefeaturetype.js"],"handlers":["clickedOnMap.js","hideLayer.js","hideLayers.js","layerLoaded.js","requestToggleComponent.js","showLayer.js","showLayers.js","switchBaseLayer.js","zoomToLayer.js"],"schemas":["base.yml","baselayers.yml","featurelayers.yml","controls.yml","view.yml","pages.yml"],"project":"geodash","id":"base"},{"controllers":["controller_legend.js"],"directives":["geodashModalLayerCarto.js","geodashModalLayerMore.js","geodashModalLayerConfig.js","geodashSymbolCircle.js","geodashSymbolEllipse.js","geodashSymbolGraduated.js","geodashSymbolGraphic.js","geodashLegendBaselayers.js","geodashLegendFeaturelayers.js"],"templates":["modal/geodash_modal_layer_carto.tpl.html","modal/geodash_modal_layer_more.tpl.html","modal/geodash_modal_layer_config.tpl.html","symbol/symbol_circle.tpl.html","symbol/symbol_ellipse.tpl.html","symbol/symbol_graduated.tpl.html","symbol/symbol_graphic.tpl.html","legend_baselayers.tpl.html","legend_featurelayers.tpl.html"],"less":["legend.less"],"schemas":["legend_schema.yml"],"project":"geodash","id":"legend"},{"controllers":[],"directives":["geodashModalWelcome.js"],"templates":["modal/geodash_modal_welcome.tpl.html"],"project":"geodash","id":"welcome"},{"controllers":[],"directives":["geodashModalAbout.js"],"templates":["geodash_modal_about.tpl.html"],"project":"geodash","id":"about"},{"controllers":[],"directives":["geodashModalDownload.js"],"templates":["geodash_modal_download.tpl.html"],"project":"geodash","id":"download"},{"controllers":[],"directives":["geodashMapOverlays.js"],"templates":["map_overlays.tpl.html"],"less":["map_overlays.less"],"schemas":["map_overlays_schema.yml"],"project":"geodash","id":"overlays"},{"controllers":[],"directives":["geodashSidebarToggleLeft.js"],"templates":["geodash_sidebar_toggle_left.tpl.html"],"project":"geodash","id":"sidebar_toggle_left"},{"controllers":[],"directives":["geodashSidebarToggleRight.js"],"templates":["geodash_sidebar_toggle_right.tpl.html"],"project":"geodash","id":"sidebar_toggle_right"},{"controllers":[{"name":"controller_map_map","path":"controller_map_map.js","handlers":[{"event":"toggleComponent","handler":"toggleComponent"}]}],"directives":[],"templates":[],"less":["main_map.less"],"handlers":["toggleComponent.js"],"project":"geodashserver","id":"map_map"},{"controllers":[],"directives":["geodashserverModalWelcome.js"],"templates":["modal_welcome_geodashserver.tpl.html"],"less":["geodashserver_welcome.less"],"project":"geodashserver","id":"geodashserver_welcome"},{"controllers":["controller_sidebar_geodashserver.js","controller_modal_edit_field.js","controller_modal_edit_object.js"],"directives":["geodashDashboardEditor.js","geodashModalEditField.js","geodashModalEditObject.js","geodashModalDashboardSecurity.js"],"templates":["dashboard_editor.tpl.html","modal_edit_field.tpl.html","modal_edit_object.tpl.html","geodash_modal_dashboard_security.tpl.html"],"less":["sidebar.less","sidebar-toggle.less"],"project":"geodashserver","id":"geodashserver_sidebar"},{"controllers":[{"name":"controller_main","path":"controller_main.js","handlers":[{"event":"clickedOnMap","handler":"clickedOnMap"},{"event":"filterChanged","handler":"filterChanged"},{"event":"hideLayer","handler":"hideLayer"},{"event":"hideLayers","handler":"hideLayers"},{"event":"layerLoaded","handler":"layerLoaded"},{"event":"requestToggleComponent","handler":"requestToggleComponent"},{"event":"selectStyle","handler":"selectStyle"},{"event":"showLayer","handler":"showLayer"},{"event":"showLayers","handler":"showLayers"},{"event":"stateChanged","handler":"stateChanged"},{"event":"switchBaseLayer","handler":"switchBaseLayer"},{"event":"viewChanged","handler":"viewChanged"},{"event":"zoomToLayer","handler":"zoomToLayer"}]}],"directives":[],"templates":[],"handlers":["filterChanged.js","selectStyle.js","stateChanged.js","viewChanged.js"],"project":"geodashserver","id":"main"}];
+geodash.meta.controllers = [{"name":"controller_map_map","handlers":[{"event":"toggleComponent","handler":"toggleComponent"}]},{"name":"controller_main","handlers":[{"event":"clickedOnMap","handler":"clickedOnMap"},{"event":"filterChanged","handler":"filterChanged"},{"event":"hideLayer","handler":"hideLayer"},{"event":"hideLayers","handler":"hideLayers"},{"event":"layerLoaded","handler":"layerLoaded"},{"event":"requestToggleComponent","handler":"requestToggleComponent"},{"event":"selectStyle","handler":"selectStyle"},{"event":"showLayer","handler":"showLayer"},{"event":"showLayers","handler":"showLayers"},{"event":"stateChanged","handler":"stateChanged"},{"event":"switchBaseLayer","handler":"switchBaseLayer"},{"event":"viewChanged","handler":"viewChanged"},{"event":"zoomToLayer","handler":"zoomToLayer"}]}];
 geodash.templates = {};
 geodash.templates["geodash_modal_dashboard_config.tpl.html"] = "<div class=\"modal-dialog geodash-responsive\" role=\"document\">\n  <div class=\"modal-content\">\n    <div class=\"modal-header\">\n      <button geodash-btn-close></button>\n      <h4 class=\"modal-title\" id=\"myModalLabel\">Configuration / {{ workspace.config.title }}</h4>\n    </div>\n    <div class=\"modal-body\">\n      <div>\n        <!-- Nav tabs -->\n        <ul class=\"nav nav-tabs\" role=\"tablist\">\n          <li label=\"Projects\" target=\"#modal-dashboard-config-projects\" active=\"true\" geodash-tab></li>\n          <li label=\"Plugins\" target=\"#modal-dashboard-config-plugins\" geodash-tab></li>\n          <li label=\"Directives\" target=\"#modal-dashboard-config-directives\" geodash-tab></li>\n          <li label=\"Templates\" target=\"#modal-dashboard-config-templates\" geodash-tab></li>\n          <li label=\"Filters\" target=\"#modal-dashboard-config-filters\" geodash-tab></li>\n          <li label=\"YAML\" target=\"#modal-dashboard-config-yaml\" geodash-tab></li>\n          <li label=\"JSON\" target=\"#modal-dashboard-config-json\" geodash-tab></li>\n        </ul>\n        <div class=\"tab-content\">\n          <div\n            id=\"modal-dashboard-config-projects\"\n            class=\"tab-pane fade in active\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h3>Projects</h3>\n            <table class=\"table\">\n              <thead>\n                <tr>\n                  <th>#</th>\n                  <th>Name</th>\n                  <th>Version</th>\n                  <th>Description</th>\n                </tr>\n              </thead>\n              <tbody>\n                <tr ng-repeat=\"project in meta.projects track by $index\">\n                  <th scope=\"row\" ng-bind-html=\"$index\"></th>\n                  <td ng-bind-html=\"project.name\"></td>\n                  <td ng-bind-html=\"project.version\"></td>\n                  <td ng-bind-html=\"project.description\"></td>\n                </tr>\n              </tbody>\n            </table>\n          </div>\n          <div\n            id=\"modal-dashboard-config-plugins\"\n            class=\"tab-pane fade in active\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h3>Plugins</h3>\n            <table class=\"table\">\n              <thead>\n                <tr>\n                  <th>#</th>\n                  <th>Project</th>\n                  <th>Name</th>\n                  <th>Version</th>\n                </tr>\n              </thead>\n              <tbody>\n                <tr ng-repeat=\"plugin in meta.plugins track by $index\">\n                  <th scope=\"row\" ng-bind-html=\"$index\"></th>\n                  <td ng-bind-html=\"plugin.project\"></td>\n                  <td ng-bind-html=\"plugin.id\"></td>\n                  <td ng-bind-html=\"plugin.version\"></td>\n                </tr>\n              </tbody>\n            </table>\n          </div>\n          <div\n            id=\"modal-dashboard-config-directives\"\n            class=\"tab-pane fade in active\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h3>Directives</h3>\n            <table class=\"table\">\n              <thead>\n                <tr>\n                  <th>#</th>\n                  <th>Name</th>\n                </tr>\n              </thead>\n              <tbody>\n                <tr ng-repeat=\"directive in meta.directives track by $index\">\n                  <th scope=\"row\" ng-bind-html=\"$index\"></th>\n                  <td ng-bind-html=\"directive\"></td>\n                </tr>\n              </tbody>\n            </table>\n          </div>\n          <div\n            id=\"modal-dashboard-config-templates\"\n            class=\"tab-pane fade in active\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h3>Templates</h3>\n            <table class=\"table\">\n              <thead>\n                <tr>\n                  <th>#</th>\n                  <th>Name</th>\n                </tr>\n              </thead>\n              <tbody>\n                <tr ng-repeat=\"template in meta.templates track by $index\">\n                  <th scope=\"row\" ng-bind-html=\"$index\"></th>\n                  <td ng-bind-html=\"template\"></td>\n                </tr>\n              </tbody>\n            </table>\n          </div>\n          <div\n            id=\"modal-dashboard-config-filters\"\n            class=\"tab-pane fade in active\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h3>Filters</h3>\n            <table class=\"table\">\n              <thead>\n                <tr>\n                  <th>#</th>\n                  <th>Name</th>\n                </tr>\n              </thead>\n              <tbody>\n                <tr ng-repeat=\"filter in meta.filters track by $index\">\n                  <th scope=\"row\" ng-bind-html=\"$index\"></th>\n                  <td ng-bind-html=\"filter\"></td>\n                </tr>\n              </tbody>\n            </table>\n          </div>\n          <div\n            id=\"modal-dashboard-config-yaml\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h3>Dashboard Configuration as YAML</h3>\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ workspace.config | yaml : 8 }}</pre>\n          </div>\n          <div\n            id=\"modal-dashboard-config-json\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h3>Dashboard Configuration as JSON</h3>\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ workspace.config | json }}</pre>\n          </div>\n        </div>\n      </div>\n    </div>\n    <div class=\"modal-footer\">\n      <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>\n    </div>\n  </div>\n</div>\n";
 geodash.templates["geodash_tab.tpl.html"] = "<li\n  role=\"presentation\"\n  ng-class=\"(active && active != \'false\') ? \'active\' : \'\'\">\n  <a\n    href=\"#{{ target }}\"\n    aria-controls=\"{{ target }}\"\n    role=\"tab\"\n    data-toggle=\"tab\"\n    style=\"padding-left:8px; padding-right: 8px; height: {{ height | default_if_undefined : \'auto\'}}\">{{ label }}</a>\n</li>\n";
 geodash.templates["geodash_btn_close.tpl.html"] = "<button\n  type=\"button\"\n  class=\"close\"\n  data-dismiss=\"{{ dismiss | default_if_undefined: \'modal\' }}\"\n  aria-hidden=\"true\"><i class=\"fa fa-times\"></i></button>\n";
 geodash.templates["geodash_btn_info.tpl.html"] = "<div\n  class=\"input-group-addon btn btn-primary\"\n  data-toggle=\"tooltip\"\n  data-placement=\"{{ placement | default_if_undefined : \'left\' }}\"\n  ng-attr-title=\"{{ info }}\">\n  <i class=\"fa fa-info-circle\"></i>\n</div>\n";
-geodash.templates["geodash_btn_clear.tpl.html"] = "<div\n  class=\"input-group-addon btn btn-danger btn-clear\"\n  data-clear=\"{{ target }}\">\n  <i class=\"fa fa-times\"></i>\n</div>\n";
+geodash.templates["geodash_btn.tpl.html"] = "<div\n  ng-class=\"[\'input-group-addon\',\'btn\',(\'btn-\'|add: mode),((mode == \'clear\' || mode ==\'off\') ? \'btn-danger\': \'\'),((mode == \'on\') ? \'btn-success\': \'\'),((mode == \'edit\') ? \'btn-primary btn-edit\': \'\')]\"\n  data-target=\"{{ target }}\"\n  data-toggle=\"{{ info | ternary_defined : \'tooltip\' : undefined }}\"\n  data-placement=\"{{ placement | default_if_undefined : \'left\' }}\"\n  ng-attr-title=\"{{ info }}\">\n  <i ng-class=\"[\'fa\',(mode == \'clear\' ? \'fa-times\' : \'\'),(mode == \'on\' ? \'fa-check\' : \'\'),(mode == \'off\' ? \'fa-circle-o\' : \'\'),(mode == \'edit\' ? \'fa-pencil-square-o\' : \'\')]\"></i>\n</div>\n";
 geodash.templates["geodash_modal_layer_carto.tpl.html"] = "<div class=\"modal-dialog\" role=\"document\">\n  <div class=\"modal-content\">\n    <div class=\"modal-header\">\n      <button geodash-btn-close></button>\n      <h4 class=\"modal-title\" id=\"myModalLabel\">Layer / {{ layer.title }} / Cartography</h4>\n    </div>\n    <div class=\"modal-body\">\n      <div>\n        <!-- Nav tabs -->\n        <ul class=\"nav nav-tabs\" role=\"tablist\">\n          <p class=\"navbar-text\" style=\"margin-bottom:0px;\"><b>Select</b><br><b>a Style:</b></p>\n          <li\n            role=\"presentation\"\n            ng-class=\"$first ? \'active\' : \'\'\"\n            ng-repeat=\"style in layer.cartography track by $index\">\n            <a\n              class=\"geodash-intent\"\n              href=\"#modal-layer-carto-style-{{ style.id }}\"\n              aria-controls=\"modal-layer-carto-style-{{ style.id }}\"\n              data-intent-name=\"selectStyle\"\n              data-intent-data=\"{&quot;layer&quot;:&quot;{{ layerID }}&quot;,&quot;style&quot;:&quot;{{ style.id }}&quot;}\"\n              data-intent-ctrl=\"geodash-map-legend\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\"\n              ng-bind-html=\"style.title | default:\'Default\' | tabLabel\"></a>\n          </li>\n        </ul>\n        <!-- Tab panes -->\n        <div class=\"tab-content\">\n          <div\n            ng-class=\"$first ? \'tab-pane fade in active\' : \'tab-pane fade\'\"\n            ng-repeat=\"style in layer.cartography track by $index\"\n            id=\"modal-layer-carto-style-{{ style.id }}\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span><b>Attribute: </b><span>{{ style.attribute | default:\"Not styled by attribute\" }}</span></span><br>\n            <span><b>Mask: </b><span ng-bind-html=\"style.mask | md2html | default:\'No Mask\'\"></span></span><br>\n            <span><b>Description: </b><span ng-bind-html=\"style.description | md2html | default:\'Not specified\'\"></span></span>\n            <br>\n            <br>\n            <div\n              ng-if=\"style.type == \'graduated\'\"\n              geodash-symbol-graduated\n              style=\"style\"\n              container-width=\"{{ \'392px\' }}\">\n            </div>\n            <div\n              ng-if=\"style.legend.symbol.type == \'circle\'\"\n              geodash-symbol-circle\n              style=\"style\">\n            </div>\n            <div\n              ng-if=\"style.legend.symbol.type == \'graphic\'\"\n              geodash-symbol-graphic\n              style=\"style\">\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n    <div class=\"modal-footer\">\n      <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>\n    </div>\n  </div>\n</div>\n";
 geodash.templates["geodash_modal_layer_more.tpl.html"] = "<div class=\"modal-dialog\" role=\"document\">\n  <div class=\"modal-content\">\n    <div class=\"modal-header\">\n      <button geodash-btn-close></button>\n      <h4 class=\"modal-title\" id=\"myModalLabel\">Layer / {{ layer.title }}</h4>\n    </div>\n    <div class=\"modal-body\">\n      <div>\n        <!-- Nav tabs -->\n        <ul class=\"nav nav-tabs\" role=\"tablist\">\n          <li role=\"presentation\" class=\"active\">\n            <a\n              href=\"#modal-layer-more-general\"\n              aria-controls=\"modal-layer-more-general\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">General</a>\n          </li>\n          <li ng-if=\"layer.wfs\" role=\"presentation\" class=\"\">\n            <a\n              href=\"#modal-layer-more-attributes\"\n              aria-controls=\"modal-layer-more-attributes\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">Attributes</a>\n          </li>\n          <li ng-if=\"layer.wms\" role=\"presentation\" class=\"\">\n            <a\n              href=\"#modal-layer-more-source\"\n              aria-controls=\"modal-layer-more-source\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">Source</a>\n          </li>\n          <li ng-if=\"layer.wms\" role=\"presentation\" class=\"\">\n            <a\n              href=\"#modal-layer-more-wms\"\n              aria-controls=\"modal-layer-more-wms\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">WMS</a>\n          </li>\n          <li ng-if=\"layer.wfs\" role=\"presentation\" class=\"\">\n            <a\n              href=\"#modal-layer-more-wfs\"\n              aria-controls=\"modal-layer-more-wfs\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">WFS</a>\n          </li>\n          <li ng-if=\"layer.wfs\" role=\"presentation\" class=\"\">\n            <a\n              href=\"#modal-layer-more-download\"\n              aria-controls=\"modal-layer-more-download\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">Download</a>\n          </li>\n        </ul>\n        <div class=\"tab-content\">\n          <div\n            id=\"modal-layer-more-general\"\n            class=\"tab-pane fade in active\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span ng-bind-html=\"layer.description | md2html | default:\'No description given.\'\"></span>\n            <br><br><b>Type:</b> {{ layer.type }}\n            <br><br><b>Source:</b> {{ layer.source.name | default:\"Not specified\" }}\n          </div>\n          <div\n            ng-if=\"layer.wfs\"\n            id=\"modal-layer-more-attributes\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <div>\n              Placeholder\n            </div>\n          </div>\n          <div\n            ng-if=\"layer.source\"\n            id=\"modal-layer-more-source\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span><b>Name:</b> {{ layer.source.name | default:\"Not specified\" }}</span><br>\n            <span><b>Attribution:</b> {{ layer.source.attribution | default:\"Not specified\" }}</span><br>\n            <span><b>URL:</b> {{ layer.source.url | default:\"Not specified\" }}</span><br>\n          </div>\n          <div\n            ng-if=\"layer.wms\"\n            id=\"modal-layer-more-wms\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span><b>URL:</b> {{ layer.wms.url | default:\"Not specified\" }}</span><br>\n            <span><b>Layers:</b> {{ layer.wms.layers|join:\', \'|default:\"Not specified\" }}</span><br>\n            <span><b>Styles:</b> {{ layer.wms.styles|join:\', \'|default:\"Not specified\" }}</span><br>\n            <span><b>Format:</b> {{ layer.wms.format | default:\"Not specified\" }}</span><br>\n            <span><b>Version:</b> {{ layer.wms.version | default:\"Not specified\" }}</span><br>\n            <span><b>Transparent:</b> {{ layer.wms.transparent | default:\"No\" }}</span><br>\n            <hr>\n            <span><a target=\"_blank\" href=\"{{ layer.wms.url }}?SERVICE=WMS&Request=GetCapabilities\">Capabilities</a><br>\n            <span><a target=\"_blank\" href=\"{{ layer.wms.url }}?SERVICE=WMS&Request=GetLegendGraphic&format=image/png&layer={{ layer.wms.layers|first }}\">Legend Graphic</a><br>\n          </div>\n          <div\n            ng-if=\"layer.wfs\"\n            id=\"modal-layer-more-wfs\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span><b>URL:</b> {{ layer.wfs.url | default:\"Not specified\" }}</span><br>\n            <span><b>Version:</b> {{ layer.wfs.version | default:\"Not specified\" }}</span><br>\n            <hr>\n            <span><a target=\"_blank\" href=\"{{ layer | url_describefeaturetype }}\">Describe Feature Type</a><br>\n          </div>\n          <div\n            ng-if=\"layer.wfs\"\n            id=\"modal-layer-more-download\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span><b>Download Shapefile</b>: <a target=\"_blank\" href=\"{{ layer | url_shapefile }}\">All</a>, <a target=\"_blank\" href=\"{{ layer | url_shapefile:state }}\">Current Extent</a><br>\n            <span><b>Download GeoJSON</b>: <a target=\"_blank\" href=\"{{ layer | url_geojson }}\">All</a>, <a target=\"_blank\" href=\"{{ layer | url_geojson:state }}\">Current Extent</a><br>\n            <span><b>Download Google Earth KML</b>: <a target=\"_blank\" href=\"{{ layer | url_kml }}\">All</a>, <a target=\"_blank\" href=\"{{ layer | url_kml:state }}\">Current Extent</a><br>\n          </div>\n        </div>\n      </div>\n    </div>\n    <div class=\"modal-footer\">\n      <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>\n    </div>\n  </div>\n</div>\n";
 geodash.templates["geodash_modal_layer_config.tpl.html"] = "<div class=\"modal-dialog\" role=\"document\">\n  <div class=\"modal-content\">\n    <div class=\"modal-header\">\n      <button geodash-btn-close></button>\n      <h4 class=\"modal-title\" id=\"myModalLabel\">Layer / {{ layer.title }}</h4>\n    </div>\n    <div class=\"modal-body\">\n      <div>\n        <!-- Nav tabs -->\n        <ul class=\"nav nav-tabs\" role=\"tablist\">\n          <li class=\"active\" role=\"presentation\">\n            <a href=\"#modal-layer-config-input\"\n              aria-controls=\"modal-layer-config-input\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">Configure</a>\n          </li>\n          <li class=\"\" role=\"presentation\">\n            <a href=\"#modal-layer-config-output\"\n              aria-controls=\"modal-layer-config-output\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">Output</a>\n          </li>\n        </ul>\n        <!-- Tab panes -->\n        <div class=\"tab-content\">\n          <div\n            id=\"modal-layer-config-input\"\n            class=\"tab-pane fade in active\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <div class=\"form-group row\" style=\"margin:0; padding-top: 10px; padding-bottom: 10px;\">\n              <div class=\"col-md-3\"><h5>Title</h5></div>\n              <div class=\"col-md-9\">\n                <label for=\"layer-config-title\" class=\"sr-only control-label\">Title</label>\n                <input\n                  id=\"layer-config-title\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  placeholder=\"Title ...\"\n                  data-geodash-field-type=\"text\"\n                  ng-model=\"layer.title\"\n                  ng-change=\"validateField()\"\n                  required\n                  value=\"{{ layer.title }}\">\n              </div>\n            </div>\n            <div class=\"form-group row\" style=\"margin:0; padding-top: 10px; padding-bottom: 10px;\">\n              <div class=\"col-md-3\"><h5>Description</h5></div>\n              <div class=\"col-md-9\">\n                <label for=\"layer-config-title\" class=\"sr-only control-label\">Description</label>\n                <input\n                  id=\"layer-config-description\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  placeholder=\"Title ...\"\n                  data-geodash-field-type=\"text\"\n                  ng-model=\"layer.description\"\n                  ng-change=\"validateField()\"\n                  required\n                  value=\"{{ layer.Description }}\">\n              </div>\n            </div>\n          </div>\n          <div\n            id=\"modal-layer-config-output\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            {{ layer | json }}\n          </div>\n        </div>\n      </div>\n    </div>\n    <div class=\"modal-footer\">\n      <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>\n    </div>\n  </div>\n</div>\n";
@@ -1962,10 +2035,13 @@ geodash.templates["geodash_modal_welcome.tpl.html"] = "<div class=\"modal-dialog
 geodash.templates["geodash_modal_about.tpl.html"] = "<div class=\"modal-dialog\" role=\"document\">\n  <div class=\"modal-content\">\n    <div class=\"modal-header\">\n      <button geodash-btn-close></button>\n      <h4 class=\"modal-title\" id=\"myModalLabel\">{{ about.title }}</h4>\n    </div>\n    <div class=\"modal-body\">\n      <div>\n        <!-- Nav tabs -->\n        <ul class=\"nav nav-tabs\" role=\"tablist\">\n          <li\n            role=\"presentation\"\n            ng-class=\"$first ? \'active\' : \'\'\"\n            ng-repeat=\"pane in about.panes track by $index\">\n            <a\n              href=\"#{{ pane.id }}\"\n              aria-controls=\"{{ pane.id }}\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\"\n              ng-bind-html=\"pane.tab.label | default:\'Default\' | tabLabel\"></a>\n          </li>\n        </ul>\n        <!-- Tab panes -->\n        <div class=\"tab-content\">\n          <div\n            ng-class=\"$first ? \'tab-pane fade in active\' : \'tab-pane fade\'\"\n            ng-repeat=\"pane in about.panes track by $index\"\n            id=\"{{ pane.id }}\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span ng-bind-html=\"pane.content | md2html | default:\'No content given.\'\"></span>\n          </div>\n        </div>\n      </div>\n    </div>\n    <div class=\"modal-footer\">\n      <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>\n    </div>\n  </div>\n</div>\n";
 geodash.templates["geodash_modal_download.tpl.html"] = "<div class=\"modal-dialog\" role=\"document\">\n  <div class=\"modal-content\">\n    <div class=\"modal-header\">\n      <button geodash-btn-close></button>\n      <h4 class=\"modal-title\" id=\"myModalLabel\">{{ download.title }}</h4>\n    </div>\n    <div class=\"modal-body\">\n      <div>\n        <!-- Nav tabs -->\n        <ul class=\"nav nav-tabs\" role=\"tablist\">\n          <li\n            role=\"presentation\"\n            ng-class=\"$first ? \'active\' : \'\'\"\n            ng-repeat=\"pane in download.panes track by $index\">\n            <a\n              href=\"#{{ pane.id }}\"\n              aria-controls=\"{{ pane.id }}\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\"\n              ng-bind-html=\"pane.tab.label | default:\'Default\' | tabLabel\"></a>\n          </li>\n        </ul>\n        <!-- Tab panes -->\n        <div class=\"tab-content\">\n          <div\n            ng-class=\"$first ? \'tab-pane fade in active\' : \'tab-pane fade\'\"\n            ng-repeat=\"pane in download.panes track by $index\"\n            id=\"{{ pane.id }}\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span ng-bind-html=\"pane.content | md2html | default:\'No content given.\'\"></span>\n          </div>\n        </div>\n      </div>\n    </div>\n    <div class=\"modal-footer\">\n      <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>\n    </div>\n  </div>\n</div>\n";
 geodash.templates["map_overlays.tpl.html"] = "<div class=\"geodash-map-overlays\">\n  <div ng-repeat=\"overlay in map_config.overlays track by $index\">\n    <div\n      ng-if=\"overlay.type == \'text\'\"\n      data-overlay-index=\"{{ $index }}\"\n      data-overlay-type=\"text\"\n      class=\"geodash-map-overlay\"\n      height=\"{{ overlay.height | default_if_undefined : initial }}\"\n      width=\"{{ overlay.width | default_if_undefined : initial }}\"\n      style=\"{{ style(overlay.type, overlay) }}\"\n      ng-bind-html=\"overlay.text.content | md2html\"\n      on-link-done=\"overlayLoaded\">\n    </div>\n    <div\n      ng-if=\"overlay.type == \'image\'\"\n      data-overlay-index=\"{{ $index }}\"\n      data-overlay-type=\"image\"\n      class=\"geodash-map-overlay\"\n      style=\"display: inline-block; {{ style(overlay.type, overlay) }}\"\n      on-link-done=\"overlayLoaded\">\n      <img\n        ng-src=\"{{ overlay.image.url }}\"\n        width=\"{{ overlay.width }}\"\n        height=\"{{ overlay.height }}\">\n    </div>\n  </div>\n</div>\n";
-geodash.templates["modal_welcome_geodashserver.tpl.html"] = "<div class=\"modal-dialog\" data-backdrop=\"static\" role=\"document\">\n  <div class=\"modal-content\">\n    <div class=\"modal-header\">\n      <h4 class=\"modal-title\" id=\"myModalLabel\">{{ welcome.title }}</h4>\n    </div>\n    <div class=\"modal-body\">\n      <div>\n        <!-- Nav tabs -->\n        <ul class=\"nav nav-tabs\" role=\"tablist\">\n          <li role=\"presentation\" class=\"active\">\n            <a\n              href=\"#modal-welcome-intro\"\n              aria-controls=\"modal-welcome-intro\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">Introduction</a>\n          </li>\n          <li role=\"presentation\" class=\"\">\n            <a\n              href=\"#modal-welcome-about\"\n              aria-controls=\"modal-welcome-about\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">About</a>\n          </li>\n        </ul>\n        <div class=\"tab-content\">\n          <div\n            id=\"modal-welcome-intro\"\n            class=\"tab-pane fade in active\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span\n              class=\"welcome-body\"\n              ng-bind-html=\"welcome.intro | md2html | default:\'No body given.\'\"></span>\n            <hr>\n            <h3 class=\"welcome-body\">Get Started: Select a dashboard!</h3>\n            <div class=\"input-group select2-bootstrap-prepend select2-bootstrap-append\">\n              <input\n                id=\"dashboard-input-backend\"\n                name=\"dashboard-input-backend\"\n                type=\"text\"\n                class=\"form-control\"\n                style=\"display:none;\"\n                ng-model=\"dashboard\">\n              <span class=\"input-group-addon\" id=\"dashboard-addon\">Dashboard</span>\n              <input\n                id=\"dashboard-input\"\n                name=\"dashboard-input\"\n                type=\"text\"\n                class=\"typeahead form-control\"\n                style=\"width:320px; height: auto;\"\n                placeholder=\"dashboard (e.g., Test, etc.)\"\n                aria-describedby=\"dashboard-addon\"\n                data-placeholder=\"dashboard (e.g., Test, etc.)\"\n                data-initial-data=\"dashboards_typeahead\"\n                data-backend=\"dashboard-input-backend\"\n                data-template-empty=\"<div class=&quot;alert alert-danger empty-message&quot;>Unable to find dashboard</div>\">\n              <div\n                class=\"input-group-addon btn btn-primary btn-show-options\"\n                data-toggle=\"tooltip\"\n                data-placement=\"bottom\"\n                title=\"Show Options.\"\n                ng-click=\"showOptions($event, \'#dashboard-input\')\">\n                <i class=\"fa fa-chevron-down\"></i>\n              </div>\n              <div\n                class=\"input-group-addon btn btn-danger btn-clear\"\n                data-toggle=\"tooltip\"\n                data-placement=\"bottom\"\n                title=\"Clear dashboard selection.\"\n                data-clear=\"#dashboard-input\">\n                <i class=\"fa fa-times\"></i>\n              </div>\n            </div>\n            <hr>\n            <ul class=\"nav nav-justified welcome-go\">\n              <li>\n                <a\n                  ng-disabled=\"dashboard == undefined || dashboard == \'\'\"\n                  ng-class=\"dashboard == undefined || dashboard == \'\'  ? \'btn btn-default\' : \'btn btn-primary\' \"\n                  ng-href=\"{{ dashboard == undefined || dashboard == \'\' ? \'#\' : \'/dashboard/\'+dashboard }}\">Go!</a>\n              </li>\n            </ul>\n          </div>\n          <div\n            id=\"modal-welcome-about\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span ng-bind-html=\"welcome.about | md2html | default:\'No body given.\'\"></span>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n";
-geodash.templates["dashboard_editor.tpl.html"] = "<div class=\"geodash-dashboard-editor\">\n  <h3 style=\"word-wrap:break-word;text-align:center;\">Editor</h3>\n  <hr>\n  <form novalidate class=\"form-horizontal simple-form\">\n    <ul class=\"nav nav-tabs nav-justified\" role=\"tablist\">\n      <li\n        ng-repeat=\"pane in editor.panes track by $index\"\n        ng-init=\"paneIndex = $index\"\n        role=\"presentation\"\n        ng-class=\"$first ? \'active\' : \'\'\">\n        <a\n          href=\"#{{ pane.id }}\"\n          aria-controls=\"{{ pane.id }}\"\n          role=\"tab\"\n          data-toggle=\"tab\"\n          style=\"padding-left:8px; padding-right: 8px; height: 62px;\"\n          ng-bind-html=\" pane.label | md2html\"></a>\n      </li>\n    </ul>\n    <div class=\"tab-content\">\n      <div\n        ng-class=\"$first ? \'tab-pane fade in active\' : \'tab-pane fade\'\"\n        ng-repeat=\"pane in fields_by_pane track by $index\"\n        ng-init=\"paneIndex = $index\"\n        id=\"{{ pane.id }}\"\n        role=\"tabpanel\"\n        style=\"padding: 10px;\">\n        <div\n          ng-repeat=\"field in pane.fields track by $index\"\n          ng-init=\"field_flat = (field | replace : \'.\' : \'__\')\"\n          ng-init=\"fieldIndex = $index\"\n          class=\"form-group\"\n          style=\"margin:0; padding-top: 10px; padding-bottom: 10px;\">\n          <div\n              ng-if=\"schema | extract : field : \'type\' | inArray: [\'text\', \'string\', \'markdown\', \'md\']\">\n            <label\n              for=\"editor-field-{{ field_flat }}\"\n              class=\"col-sm-3 control-label\"\n              ng-bind-html=\"schema | extract : field : \'label\'\"></label>\n            <div class=\"col-sm-9\">\n              <div\n                ng-if=\"schema | extract : field : \'multiline\' | default_if_undefined: \'false\' | inArray: [false, \'false\', \'no\', 0]\"\n                class=\"input-group\">\n                <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n                <input\n                  id=\"editor-field-{{ field_flat }}\"\n                  name=\"editor-field-{{ field_flat }}\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  placeholder=\"{{ schema | extract : field : \'placeholder\' }}\"\n                  data-geodash-field-type=\"{{ schema | extract : field : \'type\' }}\"\n                  ng-required=\"schema | extract : field : \'required\'\"\n                  ng-value=\"workspace_flat | extract : field_flat\"\n                  ng-model=\"workspace_flat[field_flat]\"\n                  ng-change=\"validateField(field_flat)\">\n                <a\n                  class=\"geodash-intent input-group-addon btn btn-primary btn-edit\"\n                  href=\"#\"\n                  data-intent-name=\"showModal\"\n                  data-intent-data=\"{{ html5data(\'showModal\', \'geodash-modal-edit-field\', field) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-pencil-square-o \"></i>\n                </a>\n                <div geodash-btn-clear target=\"#editor-field-{{ field_flat }}\"></div>\n              </div>\n              <div\n                ng-if=\"schema | extract : field : \'multiline\' | default_if_undefined: \'false\' | inArray: [true, \'true\', \'yes\', 1]\"\n                class=\"input-group\">\n                <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n                <textarea\n                  id=\"editor-field-{{ field_flat }}\"\n                  name=\"editor-field-{{ field_flat }}\"\n                  class=\"form-control\"\n                  placeholder=\"{{ schema | extract : field : \'placeholder\' }}\"\n                  rows=\"3\"\n                  data-geodash-field-type=\"{{ schema | extract : field : \'type\' }}\"\n                  ng-required=\"schema | extract : field : \'required\'\"\n                  style=\"max-width: 100%;\"\n                  ng-model=\"workspace_flat[field_flat]\"\n                  ng-change=\"validateField(field_flat)\"\n                  ng-bind-html=\"workspace_flat | extract : field_flat\"></textarea>\n                <a\n                  class=\"geodash-intent input-group-addon btn btn-primary btn-edit\"\n                  href=\"#\"\n                  data-intent-name=\"showModal\"\n                  data-intent-data=\"{{ html5data(\'showModal\', \'geodash-modal-edit-field\', field) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-pencil-square-o \"></i>\n                </a>\n                <div geodash-btn-clear target=\"#editor-field-{{ field_flat }}\"></div>\n              </div>\n            </div>\n            <div ng-show=\"form.$submitted || form.{{ field }}.$touched\">\n              <span ng-show=\"form.{{ field }}.$error.required\">{{ schema | extract : field : \'label\' }} is required.</span>\n            </div>\n          </div>\n          <div\n            ng-if=\"schema | extract : field : \'type\' | inArray: [\'int\', \'integer\']\">\n            <label\n              for=\"editor-field-{{ field_flat }}\"\n              class=\"col-sm-3 control-label\"\n              ng-bind-html=\"schema | extract : field : \'label\'\"></label>\n            <div class=\"col-sm-9 input-group\">\n              <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n              <input\n                id=\"editor-field-{{ field_flat }}\"\n                name=\"editor-field-{{ field_flat }}\"\n                type=\"number\"\n                class=\"form-control\"\n                placeholder=\"{{ schema | extract : field : \'placeholder\' }}\"\n                data-geodash-field-type=\"{{ schema | extract : field : \'type\' }}\"\n                ng-required=\"schema | extract : field : \'required\'\"\n                ng-attr-min=\"{{ schema | extract : field : \'minValue\' | default_if_undefined: \'\' }}\"\n                ng-attr-max=\"{{ schema | extract : field : \'maxValue\' | default_if_undefined: \'\' }}\"\n                ng-value=\"workspace_flat | extract : field_flat\"\n                ng-model=\"workspace_flat[field_flat]\"\n                ng-change=\"validateField(field_flat)\">\n              <div geodash-btn-clear target=\"#editor-field-{{ field_flat }}\"></div>\n            </div>\n            <div ng-show=\"form.$submitted || form.{{ field }}.$touched\">\n              <span ng-show=\"form.{{ field }}.$error.required\">{{ schema | extract : field : \'label\' }} is required.</span>\n            </div>\n          </div>\n          <div\n            ng-if=\"schema | extract : field : \'type\' | inArray: [\'boolean\', \'checkbox\']\"\n            class=\"col-sm-offset-2 col-sm-10\">\n            <div class=\"checkbox\">\n              <label>\n                <input\n                  type=\"checkbox\"\n                  ng-checked=\"workspace_flat | extract : field_flat\"\n                  ng-model=\"workspace_flat[field_flat]\"\n                  ng-change=\"validateField(field_flat)\"> {{ schema | extract : field : \'label\' }}\n              </label>\n            </div>\n          </div>\n          <div\n            ng-if=\"schema | extract : field : \'type\' | inArray: [\'stringarray\', \'textarray\']\">\n            <label\n              for=\"editor-field-{{ field_flat }}\"\n              class=\"col-sm-3 control-label\"\n              ng-bind-html=\"schema | extract : field : \'label\'\"></label>\n            <div class=\"col-sm-9\">\n              <div class=\"input-group\">\n                <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n                <pre class=\"form-control\" style=\"height: auto;max-height: 100px;\">\n                  <span\n                    ng-repeat=\"x in workspace | extract : field track by $index\"\n                    class=\"input-group\"\n                    ng-bind-html=\"x\">\n                  </span>\n                </pre>\n                <a\n                  class=\"geodash-intent input-group-addon btn btn-primary btn-edit\"\n                  href=\"#\"\n                  data-intent-name=\"showModal\"\n                  data-intent-data=\"{{ html5data(\'showModal\', \'geodash-modal-edit-field\', field) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-pencil-square-o \"></i>\n                </a>\n                <div geodash-btn-clear target=\"#editor-field-{{ field_flat }}\"></div>\n              </div>\n            </div>\n          </div>\n          <div\n            ng-if=\"schema | extract : field : \'type\' | inArray: [\'objectarray\', \'objarray\']\">\n            <label\n              for=\"editor-field-{{ field_flat }}\"\n              class=\"col-sm-3 control-label\"\n              ng-bind-html=\"schema | extract : field : \'label\'\"></label>\n            <div class=\"col-sm-9\">\n              <div class=\"input-group\">\n                <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n                <pre class=\"form-control\" style=\"height: auto; max-width: 280px;max-height: 100px;\">\n                  <span\n                    ng-repeat=\"x in workspace| extract : field track by $index\"\n                    class=\"input-group\"\n                    ng-bind-html=\"x.title + \' (\'+x.id+\')\'\">\n                  </span>\n                </pre>\n                <a\n                  class=\"geodash-intent input-group-addon btn btn-primary btn-edit\"\n                  href=\"#\"\n                  data-intent-name=\"showModal\"\n                  data-intent-data=\"{{ html5data(\'showModal\', \'geodash-modal-edit-field\', field) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-pencil-square-o \"></i>\n                </a>\n                <div geodash-btn-clear target=\"#editor-field-{{ field_flat }}\"></div>\n              </div>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n    <hr>\n    <div class=\"form-group\">\n      <div class=\"col-sm-offset-3 col-sm-9\">\n        <button\n          type=\"button\"\n          class=\"btn btn-success\"\n          ng-click=\"saveConfig()\"\n          ng-disabled=\"\'change_geodashdashboard\' | inArray : perms | not\"\n        >Save</button>\n        <button\n          type=\"button\"\n          class=\"btn btn-success\"\n          ng-click=\"saveAsConfig()\"\n        >Save As ...</button>\n        <button\n          type=\"button\"\n          class=\"btn btn-default\">Reset</button>\n        <a\n          class=\"geodash-intent btn btn-primary\"\n          data-intent-name=\"showModal\"\n          data-intent-data=\"{{ config.html5data.modal_dashboard_config }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\">Config</a>\n      </div>\n    </div>\n  </form>\n</div>\n";
-geodash.templates["modal_edit_field.tpl.html"] = "<div\n  id=\"geodash-modal-edit-field\"\n  class=\"geodash-controller geodash-controller-modal geodash-modal modal fade geodash-edit-field\"\n  tabindex=\"-1\"\n  role=\"dialog\"\n  aria-labelledby=\"myModalLabel\">\n  <div id=\"geodash-edit-field\" class=\"modal-dialog geodash-responsive\" role=\"document\">\n    <div\n      ng-if=\"field_flat | default_if_undefined: false\"\n      class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button geodash-btn-close></button>\n        <h4\n          id=\"myModalLabel\"\n          class=\"modal-title\"\n          ng-bind-html=\"schema | extract : field : \'label\' | prepend : \'Edit / \' | md2html\"></h4>\n      </div>\n      <div class=\"modal-body\">\n        <ul class=\"nav nav-tabs nav-justified\" role=\"tablist\">\n          <li label=\"Input\" target=\"modal-edit-field-pane-input\" active=\"true\" geodash-tab></li>\n          <li label=\"YAML\" target=\"modal-edit-field-pane-yaml\" geodash-tab></li>\n          <li label=\"JSON\" target=\"modal-edit-field-pane-json\" geodash-tab></li>\n        </ul>\n        <div class=\"tab-content\">\n          <div\n            id=\"modal-edit-field-pane-input\"\n            role=\"tabpanel\"\n            class=\"tab-pane fade\"\n            style=\"padding: 10px;\">\n            <div\n              ng-if=\"schema | extract : field : \'type\' | inArray: [\'text\', \'string\', \'markdown\', \'md\']\">\n              <textarea\n                id=\"modal-edit-field-{{ field_flat }}\"\n                name=\"modal-edit-field-{{ field_flat }}\"\n                class=\"form-control\"\n                placeholder=\"{{ schema | extract : field : \'placeholder\' }}\"\n                rows=\"15\"\n                data-geodash-field-type=\"{{ schema | extract : field : \'type\' }}\"\n                ng-required=\"schema | extract : field : \'required\'\"\n                style=\"max-width: 100%;\"\n                ng-model=\"value_edit_field\"\n                ng-change=\"validateModalField(field_flat)\"></textarea>\n            </div>\n            <div\n              ng-if=\"schema | extract : field : \'type\' | inArray: [\'textarray\', \'stringarray\']\">\n              <div class=\"input-group\">\n                <input\n                  id=\"editor-field-{{ field_flat }}-backend\"\n                  name=\"editor-field-{{ field_flat }}-backend\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  style=\"display:none;\">\n                <div\n                  class=\"input-group-addon btn btn-primary\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  ng-attr-title=\"{{ schema | extract : field : \'description\' }}\">\n                  <i class=\"fa fa-info-circle\"></i>\n                </div>\n                <div\n                  id=\"editor-field-{{ field_flat }}-label\"\n                  name=\"editor-field-{{ field_flat }}-label\"\n                  class=\"input-group-addon\"\n                  ng-bind-html=\"schema | extract : field : \'label\'\">\n                </div>\n                <input\n                  id=\"editor-field-{{ field_flat }}\"\n                  name=\"editor-field-{{ field_flat }}\"\n                  type=\"text\"\n                  class=\"typeahead form-control\"\n                  style=\"height: auto;\"\n                  data-geodash-field-type=\"{{ schema | extract : field : \'type\' }}\"\n                  ng-required=\"schema | extract : field : \'required\'\"\n                  aria-describedby=\"editor-field-{{ field_flat }}-label\"\n                  data-initial-data=\"layers\"\n                  data-backend=\"editor-field-{{ field_flat }}-backend\"\n                  data-template-empty=\"<div class=&quot;alert alert-danger empty-message&quot;>Unable to find value</div>\"\n                  ng-keyup=\"keyUpOnField($event, field, field_flat)\">\n                <div\n                  class=\"input-group-addon btn btn-primary btn-show-options\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  title=\"Show Options.\"\n                  ng-click=\"showOptions($event, \'#editor-field-\'+field_flat)\">\n                  <i class=\"fa fa-chevron-down\"></i>\n                </div>\n                <div\n                  class=\"input-group-addon btn btn-success btn-add\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  title=\"Prepend to list of layers.\"\n                  ng-click=\"prependToField($event, field, field_flat)\">\n                  <i class=\"fa fa-plus\"></i>\n                </div>\n                <div\n                  class=\"input-group-addon btn btn-danger btn-clear\"\n                  data-clear=\"#editor-field-{{ field_flat }}\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  title=\"Clear new layer text.\">\n                  <i class=\"fa fa-times\"></i>\n                </div>\n              </div>\n              <br>\n              <div\n                ng-repeat=\"x in modaleditfield_workspace | extract : field track by $index\"\n                class=\"input-group\"\n                style=\"margin-bottom: 4px;\">\n                <div\n                  class=\"input-group-addon btn btn-default\"\n                  style=\"font-weight: bold;\"\n                  ng-bind-html=\"$index\">\n                </div>\n                <div\n                  ng-class=\"$first ? \'input-group-addon btn btn-default\' : \'input-group-addon btn btn-primary\'\"\n                  ng-disabled=\"$first\"\n                  ng-click=\"up($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-arrow-up\"></i>\n                </div>\n                <div\n                  ng-class=\"$last ? \'input-group-addon btn btn-default\' : \'input-group-addon btn btn-primary\'\"\n                  ng-disabled=\"$last\"\n                  ng-click=\"down($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-arrow-down\"></i>\n                </div>\n                <input\n                  id=\"editor-field-{{ field_flat }}-{{ $index }}\"\n                  name=\"editor-field-{{ field_flat }}-{{ $index }}\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  ng-value=\"x\">\n                <div\n                  class=\"input-group-addon btn btn-danger btn-clear\"\n                  ng-click=\"subtractFromField($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-times\"></i>\n                </div>\n              </div>\n            </div>\n            <div\n              ng-if=\"schema | extract : field : \'type\' | inArray: [\'objectarray\', \'objarray\']\">\n              <div>\n                <div\n                  class=\"btn btn-primary\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  ng-attr-title=\"{{ schema | extract : field : \'description\' }}\">\n                  <i class=\"fa fa-info-circle\"></i>\n                </div>\n                <div\n                  class=\"btn btn-success btn-add geodash-intent\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  title=\"Prepend to list.\"\n                  data-intent-name=\"switchModal\"\n                  data-intent-data=\"{{ html5data(\'switchModal\', config.that.id , config.edit.target, field, undefined) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-plus\"></i>\n                </div>\n              </div>\n              <br>\n              <div\n                ng-repeat=\"x in modaleditfield_workspace | extract : field track by $index\"\n                class=\"input-group\"\n                style=\"margin-bottom: 4px;\">\n                <div\n                  class=\"input-group-addon btn btn-default\"\n                  style=\"font-weight: bold;\"\n                  ng-bind-html=\"$index\">\n                </div>\n                <div\n                  ng-class=\"$first ? \'input-group-addon btn btn-default\' : \'input-group-addon btn btn-primary\'\"\n                  ng-disabled=\"$first\"\n                  ng-click=\"up($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-arrow-up\"></i>\n                </div>\n                <div\n                  ng-class=\"$last ? \'input-group-addon btn btn-default\' : \'input-group-addon btn btn-primary\'\"\n                  ng-disabled=\"$last\"\n                  ng-click=\"down($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-arrow-down\"></i>\n                </div>\n                <span\n                  id=\"editor-field-{{ field_flat }}-{{ $index }}\"\n                  name=\"editor-field-{{ field_flat }}-{{ $index }}\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  ng-bind-html=\"x.title + \' (\'+x.id+\')\'\"></span>\n                <a\n                  class=\"geodash-intent input-group-addon btn btn-primary btn-edit\"\n                  href=\"#\"\n                  data-intent-name=\"switchModal\"\n                  data-intent-data=\"{{ html5data(\'switchModal\', config.that.id, config.edit.target, field, $index) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-pencil-square-o \"></i>\n                </a>\n                <div\n                  class=\"input-group-addon btn btn-danger btn-clear\"\n                  ng-click=\"subtractFromField($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-times\"></i>\n                </div>\n              </div>\n            </div>\n          </div>\n          <div\n            id=\"modal-edit-field-pane-yaml\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ value_edit_field | yaml : 8 }}</pre>\n          </div>\n          <div\n            id=\"modal-edit-field-pane-json\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ value_edit_field | json }}</pre>\n          </div>\n        </div>\n        <hr>\n        <div\n          class=\"btn btn-danger btn-clear\"\n          data-clear=\"#modal-edit-field-{{ field_flat }}, #editor-field-{{ field_flat }}\">\n          <i class=\"fa fa-times\"></i>\n        </div>\n      </div>\n      <div class=\"modal-footer\">\n        <button\n          type=\"button\"\n          class=\"btn btn-success geodash-intent\"\n          data-intent-name=\"saveAndHide\"\n          data-intent-data=\"{{ html5data(\'saveAndHide\', config.that.id, config.save.target, config.save.fields) }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\"\n          ng-bind-html=\"schema | extract : field : \'label\' | prepend : \'Save \' | md2html\"\n        ></button>\n        <button\n          type=\"button\"\n          class=\"btn btn-default geodash-intent\"\n          data-intent-name=\"hideModal\"\n          data-intent-data=\"{{ html5data(\'hideModal\', config.that.id) }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\"\n          ng-bind-html=\"\'Cancel\'\"></button>\n      </div>\n    </div>\n  </div>\n</div>\n";
-geodash.templates["modal_edit_object.tpl.html"] = "<div\n  id=\"geodash-modal-edit-object\"\n  class=\"geodash-controller geodash-controller-modal geodash-modal modal fade geodash-edit-object\"\n  tabindex=\"-1\"\n  role=\"dialog\"\n  aria-labelledby=\"myModalLabel\">\n  <div id=\"geodash-edit-object\" class=\"modal-dialog geodash-responsive\" role=\"document\">\n    <div\n      ng-if=\"objectIndex | default_if_undefined: -1 | gte: 0\"\n      class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button\n          type=\"button\"\n          class=\"close geodash-intent\"\n          aria-hidden=\"true\"\n          data-intent-name=\"switchModal\"\n          data-intent-data=\"{{ html5data(\'switchModal\', config.that.id, \'geodash-modal-edit-field\', prefix_field) }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\"\n          ><i class=\"fa fa-times\"></i>\n        </button>\n        <h4\n          id=\"myModalLabel\"\n          class=\"modal-title\"\n          ng-bind-html=\"schema | extract : prefix_field : \'label\' | prepend : \'Edit / \' | append : \' / \' : object.id | md2html\"></h4>\n      </div>\n      <div class=\"modal-body\">\n        <ul class=\"nav nav-tabs nav-justified\" role=\"tablist\">\n          <li label=\"Input\" target=\"modal-edit-object-pane-input\" active=\"true\" geodash-tab></li>\n          <li label=\"YAML\" target=\"modal-edit-object-pane-yaml\" geodash-tab></li>\n          <li label=\"JSON\" target=\"modal-edit-object-pane-json\" geodash-tab></li>\n        </ul>\n        <div class=\"tab-content\">\n          <div\n            id=\"modal-edit-object-pane-input\"\n            role=\"tabpanel\"\n            class=\"tab-pane fade\"\n            style=\"padding: 10px;overflow-y: scroll; max-height:240px;\">\n            <form\n              novalidate\n              class=\"form-horizontal simple-form\"\n              ng-if=\"objectIndex != undefined\">\n              <!--\n                Doesn\'t rerun ng-repeat beacuse object_schema.fields is the same\n                Need ng-repeat to be forced to run again when field changes.\n                Throw in a fake ng-if on objectIndex??\n              -->\n              <div\n                ng-repeat=\"object_field in object_schema.fields track by $index\"\n                ng-init=\"objectFieldIndex = $index; object_field_id = object_field.id; object_field_id_flat = (object_field.id | replace : \'.\' : \'__\' | prepend : prefix_field_flat : \'__\' : objectIndex : \'__\')\"\n                class=\"form-group\"\n                style=\"margin:0; padding-top: 10px; padding-bottom: 10px;\"\n                ng-if=\"when(object_field)\"\n                <!-- Start -->\n                <div\n                  ng-if=\"object_field | extract : \'type\' | inArray: [\'text\', \'string\', \'markdown\', \'md\']\">\n                  <label\n                    for=\"editor-object-field-{{ object_field_id_flat }}\"\n                    class=\"col-sm-3 control-label\"\n                    ng-bind-html=\"object_field | extract : \'label\'\"></label>\n                  <div class=\"col-sm-9\">\n                    <div\n                      ng-if=\"object_field | extract : \'multiline\' | default_if_undefined: \'false\' | inArray: [false, \'false\', \'no\', 0]\"\n                      class=\"input-group\">\n                      <div\n                        geodash-btn-info info=\"{{ object_field | extract : \'description\' }}\"></div>\n                      <input\n                        ng-if=\"object_field | extract : \'options\' | default_if_undefined : [] | length | eq: 0\"\n                        id=\"editor-object-field-{{ object_field_id_flat }}\"\n                        name=\"editor-object-field-{{ object_field_id_flat }}\"\n                        type=\"text\"\n                        class=\"form-control\"\n                        placeholder=\"{{ object_field | extract : \'placeholder\' }}\"\n                        data-geodash-field-type=\"{{ object_field | extract : \'type\' }}\"\n                        ng-required=\"object_field | extract : \'required\'\"\n                        ng-value=\"modaleditobject_workspace_flat | extract : object_field_id_flat\"\n                        ng-model=\"modaleditobject_workspace_flat[object_field_id_flat]\"\n                        ng-change=\"validateField(object_field_id_flat)\">\n                      <input\n                        ng-if=\"object_field | extract : \'options\' | default_if_undefined : [] | length | gt: 0\"\n                        id=\"editor-object-field-{{ object_field_id_flat }}-backend\"\n                        name=\"editor-object-field-{{ object_field_id_flat }}-backend\"\n                        type=\"text\"\n                        class=\"form-control\"\n                        style=\"display:none;\"\n                        ng-value=\"modaleditobject_workspace_flat | extract : object_field_id_flat\"\n                        ng-model=\"modaleditobject_workspace_flat[object_field_id_flat]\"\n                        ng-change=\"validateField(object_field_id_flat)\">\n                      <input\n                        ng-if=\"object_field | extract : \'options\' | default_if_undefined : [] | length | gt: 0\"\n                        id=\"editor-object-field-{{ object_field_id_flat }}\"\n                        name=\"editor-object-field-{{ object_field_id_flat }}\"\n                        type=\"text\"\n                        class=\"typeahead form-control\"\n                        placeholder=\"{{ object_field | extract : \'placeholder\' }}\"\n                        data-geodash-field-type=\"{{ object_field | extract : \'type\' }}\"\n                        data-initial-data=\"{{ object_field | extract : \'options\' }}\"\n                        data-backend=\"editor-object-field-{{ object_field_id_flat }}-backend\"\n                        ng-value=\"modaleditobject_workspace_flat | extract : object_field_id_flat\">\n                      <div\n                        ng-if=\"object_field | extract : \'options\' | default_if_undefined : [] | length | gt: 0\"\n                        class=\"input-group-addon btn btn-primary btn-show-options\"\n                        data-toggle=\"tooltip\"\n                        data-placement=\"bottom\"\n                        title=\"Show Options.\"\n                        ng-click=\"showOptions($event, \'#editor-object-field-\' + object_field_id_flat)\">\n                        <i class=\"fa fa-chevron-down\"></i>\n                      </div>\n                      <div\n                        class=\"input-group-addon btn btn-danger btn-clear\"\n                        data-clear=\"#editor-object-field-{{ object_field_id_flat }}\">\n                        <i class=\"fa fa-times\"></i>\n                      </div>\n                    </div>\n                    <div\n                      ng-if=\"object_field | extract : \'multiline\' | default_if_undefined: \'false\' | inArray: [true, \'true\', \'yes\', 1]\"\n                      class=\"input-group\">\n                      <div\n                        class=\"input-group-addon btn btn-primary\"\n                        data-toggle=\"tooltip\"\n                        data-placement=\"left\"\n                        ng-attr-title=\"{{ object_field | extract : \'description\' }}\">\n                        <i class=\"fa fa-info-circle\"></i>\n                      </div>\n                      <textarea\n                        id=\"editor-object-field-{{ object_field_id_flat }}\"\n                        name=\"editor-object-field-{{ object_field_id_flat }}\"\n                        class=\"form-control\"\n                        placeholder=\"{{ object_field | extract : \'placeholder\' }}\"\n                        rows=\"3\"\n                        data-geodash-field-type=\"{{ object_field | extract : \'type\' }}\"\n                        ng-required=\"object_field | extract : \'required\'\"\n                        style=\"max-width: 100%;\"\n                        ng-model=\"modaleditobject_workspace_flat[object_field_id_flat]\"\n                        ng-change=\"validateField(object_field_id_flat)\"\n                        ng-bind-html=\"modaleditobject_workspace_flat | extract : object_field_id_flat\"></textarea>\n                      <div\n                        class=\"input-group-addon btn btn-danger btn-clear\"\n                        data-clear=\"#editor-object-field-{{ object_field_id_flat }}\">\n                        <i class=\"fa fa-times\"></i>\n                      </div>\n                    </div>\n                  </div>\n                </div>\n                <div\n                  ng-if=\"object_field | extract : \'type\' | inArray: [\'int\', \'integer\']\">\n                  <label\n                    for=\"editor-object-field-{{ object_field_id_flat }}\"\n                    class=\"col-sm-3 control-label\"\n                    ng-bind-html=\"object_field | extract : \'label\'\"></label>\n                  <div class=\"col-sm-9 input-group\">\n                    <div\n                      class=\"input-group-addon btn btn-primary\"\n                      data-toggle=\"tooltip\"\n                      data-placement=\"left\"\n                      ng-attr-title=\"{{ object_field | extract : \'description\' }}\">\n                      <i class=\"fa fa-info-circle\"></i>\n                    </div>\n                    <input\n                      id=\"editor-object-field-{{ object_field_id_flat }}\"\n                      name=\"editor-object-field-{{ object_field_id_flat }}\"\n                      type=\"number\"\n                      class=\"form-control\"\n                      placeholder=\"{{ object_field | extract : \'placeholder\' }}\"\n                      data-geodash-field-type=\"{{ object_field | extract : \'type\' }}\"\n                      ng-required=\"object_field | extract : \'required\'\"\n                      ng-attr-min=\"{{ object_field | extract : \'minValue\' | default_if_undefined: \'\' }}\"\n                      ng-attr-max=\"{{ object_field | extract : \'maxValue\' | default_if_undefined: \'\' }}\"\n                      ng-value=\"modaleditobject_workspace_flat | extract : object_field_id_flat\"\n                      ng-model=\"modaleditobject_workspace_flat[object_field_id_flat]\"\n                      ng-change=\"validateField(object_field_id_flat)\">\n                    <div\n                      class=\"input-group-addon btn btn-danger btn-clear\"\n                      data-clear=\"#editor-object-field-{{ object_field_id_flat }}\">\n                      <i class=\"fa fa-times\"></i>\n                    </div>\n                  </div>\n                </div>\n                <div\n                  ng-if=\"object_field | extract : \'type\' | inArray: [\'boolean\', \'checkbox\']\"\n                  class=\"col-sm-offset-2 col-sm-10\">\n                  <div class=\"checkbox\">\n                    <label>\n                      <input\n                        type=\"checkbox\"\n                        ng-checked=\"modaleditobject_workspace_flat | extract : object_field_id_flat\"\n                        ng-model=\"modaleditobject_workspace_flat[object_field_id_flat]\"\n                        ng-change=\"validateField(object_field_id_flat)\"> {{ object_field | extract : \'label\' }}\n                    </label>\n                  </div>\n                </div>\n                <div\n                  ng-if=\"object_field | extract : \'type\' | inArray: [\'stringarray\', \'textarray\']\">\n                  <label\n                    for=\"editor-object-field-{{ object_field_id_flat }}\"\n                    class=\"col-sm-3 control-label\"\n                    ng-bind-html=\"object_field | extract : \'label\'\"></label>\n                  <div class=\"col-sm-9\">\n                    <div class=\"input-group\">\n                      <div\n                        class=\"input-group-addon btn btn-primary\"\n                        data-toggle=\"tooltip\"\n                        data-placement=\"left\"\n                        ng-attr-title=\"{{ object_field | extract : \'description\' }}\">\n                        <i class=\"fa fa-info-circle\"></i>\n                      </div>\n                      <pre class=\"form-control\" style=\"height: auto;max-height: 100px;\">\n                        <span\n                          ng-repeat=\"x in modaleditobject_workspace | extract : field track by $index\"\n                          class=\"input-group\"\n                          ng-bind-html=\"x\">\n                        </span>\n                      </pre>\n                      <div\n                        class=\"input-group-addon btn btn-danger btn-clear\"\n                        data-clear=\"#editor-object-field-{{ object_field_id_flat }}\">\n                        <i class=\"fa fa-times\"></i>\n                      </div>\n                    </div>\n                  </div>\n                </div>\n                <div\n                  ng-if=\"object_field | extract : \'type\' | inArray: [\'objectarray\', \'objarray\']\">\n                  <label\n                    for=\"editor-object-field-{{ object_field_id_flat }}\"\n                    class=\"col-sm-3 control-label\"\n                    ng-bind-html=\"object_field | extract : \'label\'\"></label>\n                  <div class=\"col-sm-9\">\n                    <div class=\"input-group\">\n                      <div\n                        class=\"input-group-addon btn btn-primary\"\n                        data-toggle=\"tooltip\"\n                        data-placement=\"left\"\n                        ng-attr-title=\"{{ object_field | extract : \'description\' }}\">\n                        <i class=\"fa fa-info-circle\"></i>\n                      </div>\n                      <pre class=\"form-control\" style=\"height: auto; max-width: 280px;max-height: 100px;\">\n                        <span\n                          ng-repeat=\"x in modaleditobject_workspace| extract : object_field_id track by $index\"\n                          class=\"input-group\"\n                          style=\"cusor: default;\"\n                          ng-bind-html=\"x.title + \' (\'+x.id+\')\'\"\n                          disabled>\n                        </span>\n                      </pre>\n                      <div\n                        class=\"input-group-addon btn btn-danger btn-clear\"\n                        data-clear=\"#editor-object-field-{{ object_field_id_flat }}\">\n                        <i class=\"fa fa-times\"></i>\n                      </div>\n                    </div>\n                  </div>\n                </div>\n                <!-- End -->\n              </div>\n            </form>\n          </div>\n          <div\n            id=\"modal-edit-object-pane-yaml\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h4 ng-bind-html=\"object_field | extract : \'schema\' : \'verbose_singular\' | default_if_undefined : \'Object\' | append : \' as YAML\'\"></h4>\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ object | yaml : 8 }}</pre>\n          </div>\n          <div\n            id=\"modal-edit-object-pane-json\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h4 ng-bind-html=\"object_field | extract : \'schema\' : \'verbose_singular\' | default_if_undefined : \'Object\' | append : \' as JSON\'\"></h4>\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ object | json }}</pre>\n          </div>\n        </div>\n      </div>\n      <div class=\"modal-footer\">\n        <button\n          type=\"button\"\n          class=\"btn btn-success geodash-intent\"\n          data-intent-name=\"switchModal\"\n          data-intent-data=\"{{ html5data(\'saveObjectAndSwitch\', config.that.id, config.save.target, prefix_field, prefix_field_flat, config.save.fields) }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\"\n          ng-bind-html=\"object_field | extract : \'schema\' : \'verbose_singular\' | default_if_undefined : \'Object\' | prepend : \'Save \'\"\n        ></button>\n        <button\n          type=\"button\"\n          class=\"btn btn-default geodash-intent\"\n          data-intent-name=\"switchModal\"\n          data-intent-data=\"{{ html5data(\'switchModal\', config.that.id, config.save.target, prefix_field) }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\"\n          ng-bind-html=\"schema | extract : prefix_field : \'label\' | prepend : \'Back to \' | md2html\"\n        ></button>\n      </div>\n    </div>\n  </div>\n</div>\n";
+geodash.templates["geodash_sidebar_toggle_left.tpl.html"] = "<div\n  id=\"geodash-map-sidebar-toggle-left\"\n  class=\"geodash-intent geodash-map-sidebar-toggle geodash-map-sidebar-toggle-left btn btn-primary sidebar-open sidebar-left-open\"\n  data-toggle=\"tooltip\"\n  data-placement=\"bottom\"\n  title=\"Click to toggle sidebar.\"\n  data-intent-name=\"requestToggleComponent\"\n  data-intent-data=\"{&quot;selector&quot;:&quot;{{ selector }}&quot;,&quot;component&quot;:&quot;sidebar&quot;,&quot;position&quot;:&quot;left&quot;}\"\n  data-intent-ctrl=\"geodash-map-sidebar-toggle-left\">\n  <div\n    style=\"padding: 4px;\">\n    <span class=\"icon-arrow-gt\">&gt;&gt;</span>\n    <span class=\"icon-arrow-lt\">&lt;&lt;</span>\n  </div>\n</div>\n";
+geodash.templates["geodash_sidebar_toggle_right.tpl.html"] = "<div\n  id=\"geodash-map-sidebar-toggle-right\"\n  class=\"geodash-intent geodash-map-sidebar-toggle geodash-map-sidebar-toggle-right btn btn-primary sidebar-open sidebar-right-open\"\n  data-toggle=\"tooltip\"\n  data-placement=\"bottom\"\n  title=\"Click to toggle sidebar.\"\n  data-intent-name=\"requestToggleComponent\"\n  data-intent-data=\"{&quot;selector&quot;:&quot;{{ selector }}&quot;,&quot;component&quot;:&quot;sidebar&quot;,&quot;position&quot;:&quot;right&quot;}\"\n  data-intent-ctrl=\"geodash-map-sidebar-toggle-right\">\n  <div\n    style=\"padding: 4px;\">\n    <span class=\"icon-arrow-gt\">&gt;&gt;</span>\n    <span class=\"icon-arrow-lt\">&lt;&lt;</span>\n  </div>\n</div>\n";
+geodash.templates["modal_welcome_geodashserver.tpl.html"] = "<div class=\"modal-dialog\" data-backdrop=\"static\" role=\"document\">\n  <div class=\"modal-content\">\n    <div class=\"modal-header\">\n      <h4 class=\"modal-title\" id=\"myModalLabel\">{{ welcome.title }}</h4>\n    </div>\n    <div class=\"modal-body\">\n      <div>\n        <!-- Nav tabs -->\n        <ul class=\"nav nav-tabs\" role=\"tablist\">\n          <li role=\"presentation\" class=\"active\">\n            <a\n              href=\"#modal-welcome-intro\"\n              aria-controls=\"modal-welcome-intro\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">Introduction</a>\n          </li>\n          <li role=\"presentation\" class=\"\">\n            <a\n              href=\"#modal-welcome-about\"\n              aria-controls=\"modal-welcome-about\"\n              role=\"tab\"\n              data-toggle=\"tab\"\n              style=\"padding-left:8px; padding-right: 8px;\">About</a>\n          </li>\n        </ul>\n        <div class=\"tab-content\">\n          <div\n            id=\"modal-welcome-intro\"\n            class=\"tab-pane fade in active\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span\n              class=\"welcome-body\"\n              ng-bind-html=\"welcome.intro | md2html | default:\'No body given.\'\"></span>\n            <hr>\n            <h3 class=\"welcome-body\">Get Started: Select a dashboard!</h3>\n            <div class=\"input-group select2-bootstrap-prepend select2-bootstrap-append\">\n              <input\n                id=\"dashboard-input-backend\"\n                name=\"dashboard-input-backend\"\n                type=\"text\"\n                class=\"form-control\"\n                style=\"display:none;\"\n                ng-model=\"dashboard\">\n              <span class=\"input-group-addon\" id=\"dashboard-addon\">Dashboard</span>\n              <input\n                id=\"dashboard-input\"\n                name=\"dashboard-input\"\n                type=\"text\"\n                class=\"typeahead form-control\"\n                style=\"width:320px; height: auto;\"\n                placeholder=\"dashboard (e.g., Test, etc.)\"\n                aria-describedby=\"dashboard-addon\"\n                data-placeholder=\"dashboard (e.g., Test, etc.)\"\n                data-initial-data=\"dashboards_typeahead\"\n                data-backend=\"dashboard-input-backend\"\n                data-template-empty=\"<div class=&quot;alert alert-danger empty-message&quot;>Unable to find dashboard</div>\">\n              <div\n                class=\"input-group-addon btn btn-primary btn-show-options\"\n                data-toggle=\"tooltip\"\n                data-placement=\"bottom\"\n                title=\"Show Options.\"\n                ng-click=\"showOptions($event, \'#dashboard-input\')\">\n                <i class=\"fa fa-chevron-down\"></i>\n              </div>\n              <div\n                class=\"input-group-addon btn btn-danger btn-clear\"\n                data-toggle=\"tooltip\"\n                data-placement=\"bottom\"\n                title=\"Clear dashboard selection.\"\n                data-target=\"#dashboard-input\">\n                <i class=\"fa fa-times\"></i>\n              </div>\n            </div>\n            <hr>\n            <ul class=\"nav nav-justified welcome-go\">\n              <li>\n                <a\n                  ng-disabled=\"dashboard == undefined || dashboard == \'\'\"\n                  ng-class=\"dashboard == undefined || dashboard == \'\'  ? \'btn btn-default\' : \'btn btn-primary\' \"\n                  ng-href=\"{{ dashboard == undefined || dashboard == \'\' ? \'#\' : \'/dashboard/\'+dashboard }}\">Go!</a>\n              </li>\n            </ul>\n          </div>\n          <div\n            id=\"modal-welcome-about\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <span ng-bind-html=\"welcome.about | md2html | default:\'No body given.\'\"></span>\n          </div>\n        </div>\n      </div>\n    </div>\n  </div>\n</div>\n";
+geodash.templates["dashboard_editor.tpl.html"] = "<div class=\"geodash-dashboard-editor\">\n  <h3 style=\"word-wrap:break-word;text-align:center;\">Editor</h3>\n  <hr>\n  <form\n    class=\"form-horizontal simple-form\"\n    style=\"margin: 10px;\"\n    novalidate>\n    <ul class=\"nav nav-tabs nav-justified\" role=\"tablist\">\n      <li\n        ng-repeat=\"pane in editor.panes track by $index\"\n        ng-init=\"paneIndex = $index\"\n        role=\"presentation\"\n        ng-class=\"$first ? \'active\' : \'\'\">\n        <a\n          href=\"#{{ pane.id }}\"\n          aria-controls=\"{{ pane.id }}\"\n          role=\"tab\"\n          data-toggle=\"tab\"\n          style=\"padding-left:8px; padding-right: 8px; height: 62px;\"\n          ng-bind-html=\" pane.label | md2html\"></a>\n      </li>\n    </ul>\n    <div class=\"tab-content\">\n      <div\n        ng-class=\"$first ? \'tab-pane fade in active\' : \'tab-pane fade\'\"\n        ng-repeat=\"pane in fields_by_pane track by $index\"\n        ng-init=\"paneIndex = $index\"\n        id=\"{{ pane.id }}\"\n        role=\"tabpanel\"\n        style=\"padding: 10px;\">\n        <div\n          ng-repeat=\"field in pane.fields track by $index\"\n          ng-init=\"field_flat = (field | replace : \'.\' : \'__\')\"\n          ng-init=\"fieldIndex = $index\"\n          class=\"form-group\"\n          style=\"margin:0; padding-top: 10px; padding-bottom: 10px;\">\n          <div\n              ng-if=\"schema | extract : field : \'type\' | inArray: [\'text\', \'string\', \'markdown\', \'md\']\">\n            <label\n              for=\"editor-field-{{ field_flat }}\"\n              class=\"col-sm-3 control-label\"\n              ng-bind-html=\"schema | extract : field : \'label\'\"></label>\n            <div class=\"col-sm-9\">\n              <div\n                ng-if=\"schema | extract : field : \'multiline\' | default_if_undefined: \'false\' | inArray: [false, \'false\', \'no\', 0]\"\n                class=\"input-group\">\n                <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n                <input\n                  id=\"editor-field-{{ field_flat }}\"\n                  name=\"editor-field-{{ field_flat }}\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  placeholder=\"{{ schema | extract : field : \'placeholder\' }}\"\n                  data-geodash-field-type=\"{{ schema | extract : field : \'type\' }}\"\n                  ng-required=\"schema | extract : field : \'required\'\"\n                  ng-value=\"workspace_flat | extract : field_flat\"\n                  ng-model=\"workspace_flat[field_flat]\"\n                  ng-change=\"validateField(field_flat)\">\n                <a\n                  class=\"geodash-intent input-group-addon btn btn-primary btn-edit\"\n                  href=\"#\"\n                  data-intent-name=\"showModal\"\n                  data-intent-data=\"{{ html5data(\'showModal\', \'geodash-modal-edit-field\', field) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-pencil-square-o \"></i>\n                </a>\n                <div\n                  geodash-btn mode=\"edit\"\n                  target=\"#editor-field-{{ field_flat }}\"\n                  info=\"Edit field\"\n                  tooltip-placement=\"bottom\"\n                  class=\"geodash-intent\"\n                  data-intent-name=\"showModal\"\n                  data-intent-data=\"{{ html5data(\'showModal\', \'geodash-modal-edit-field\', field) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">></div>\n                <div\n                  geodash-btn mode=\"clear\"\n                  target=\"#editor-field-{{ field_flat }}\"\n                  info=\"Clear field\"\n                  tooltip-placement=\"bottom\"></div>\n              </div>\n              <div\n                ng-if=\"schema | extract : field : \'multiline\' | default_if_undefined: \'false\' | inArray: [true, \'true\', \'yes\', 1]\"\n                class=\"input-group\">\n                <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n                <textarea\n                  id=\"editor-field-{{ field_flat }}\"\n                  name=\"editor-field-{{ field_flat }}\"\n                  class=\"form-control\"\n                  placeholder=\"{{ schema | extract : field : \'placeholder\' }}\"\n                  rows=\"3\"\n                  data-geodash-field-type=\"{{ schema | extract : field : \'type\' }}\"\n                  ng-required=\"schema | extract : field : \'required\'\"\n                  style=\"max-width: 100%;\"\n                  ng-model=\"workspace_flat[field_flat]\"\n                  ng-change=\"validateField(field_flat)\"\n                  ng-bind-html=\"workspace_flat | extract : field_flat\"></textarea>\n                <a\n                  class=\"geodash-intent input-group-addon btn btn-primary btn-edit\"\n                  href=\"#\"\n                  data-intent-name=\"showModal\"\n                  data-intent-data=\"{{ html5data(\'showModal\', \'geodash-modal-edit-field\', field) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-pencil-square-o \"></i>\n                </a>\n                <div\n                  geodash-btn mode=\"clear\"\n                  target=\"#editor-field-{{ field_flat }}\"\n                  info=\"Clear field\"\n                  tooltip-placement=\"bottom\"></div>\n              </div>\n            </div>\n            <div ng-show=\"form.$submitted || form.{{ field }}.$touched\">\n              <span ng-show=\"form.{{ field }}.$error.required\">{{ schema | extract : field : \'label\' }} is required.</span>\n            </div>\n          </div>\n          <div\n            ng-if=\"schema | extract : field : \'type\' | inArray: [\'int\', \'integer\']\">\n            <label\n              for=\"editor-field-{{ field_flat }}\"\n              class=\"col-sm-3 control-label\"\n              ng-bind-html=\"schema | extract : field : \'label\'\"></label>\n            <div class=\"col-sm-9 input-group\">\n              <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n              <input\n                id=\"editor-field-{{ field_flat }}\"\n                name=\"editor-field-{{ field_flat }}\"\n                type=\"number\"\n                class=\"form-control\"\n                placeholder=\"{{ schema | extract : field : \'placeholder\' }}\"\n                data-geodash-field-type=\"{{ schema | extract : field : \'type\' }}\"\n                ng-required=\"schema | extract : field : \'required\'\"\n                ng-attr-min=\"{{ schema | extract : field : \'minValue\' | default_if_undefined: \'\' }}\"\n                ng-attr-max=\"{{ schema | extract : field : \'maxValue\' | default_if_undefined: \'\' }}\"\n                ng-value=\"workspace_flat | extract : field_flat\"\n                ng-model=\"workspace_flat[field_flat]\"\n                ng-change=\"validateField(field_flat)\">\n              <div\n                geodash-btn mode=\"clear\"\n                target=\"#editor-field-{{ field_flat }}\"\n                info=\"Clear field\"\n                tooltip-placement=\"bottom\"></div>\n            </div>\n            <div ng-show=\"form.$submitted || form.{{ field }}.$touched\">\n              <span ng-show=\"form.{{ field }}.$error.required\">{{ schema | extract : field : \'label\' }} is required.</span>\n            </div>\n          </div>\n          <div\n            ng-if=\"schema | extract : field : \'type\' | inArray: [\'boolean\', \'checkbox\']\">\n            <label\n              for=\"editor-field-{{ field_flat }}\"\n              class=\"col-sm-3 control-label\"\n              ng-bind-html=\"schema | extract : field : \'label\'\"></label>\n            <div class=\"col-sm-9\">\n              <div class=\"input-group\">\n                <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n                <input\n                  id=\"editor-field-{{ field_flat }}\"\n                  name=\"editor-field-{{ field_flat }}\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  ng-style=\"{\'font-weight\': \'bold\', \'color\': ((workspace_flat | extract : field_flat | parseTrue ) ? \'green\' : \'red\') }\"\n                  placeholder=\"{{ schema | extract : field : \'placeholder\' }}\"\n                  data-geodash-field-type=\"{{ schema | extract : field : \'type\' }}\"\n                  ng-required=\"schema | extract : field : \'required\'\"\n                  ng-value=\"workspace_flat | extract : field_flat\"\n                  ng-model=\"workspace_flat[field_flat]\"\n                  ng-change=\"validateField(field_flat)\"\n                  disabled>\n                <div\n                  geodash-btn mode=\"on\"\n                  target=\"#editor-field-{{ field_flat }}\"\n                  info=\"Set to true\"\n                  tooltip-placement=\"bottom\"></div>\n                <div\n                  geodash-btn mode=\"off\"\n                  target=\"#editor-field-{{ field_flat }}\"\n                  info=\"Set to false\"\n                  tooltip-placement=\"bottom\"></div>\n                <div\n                  geodash-btn mode=\"clear\"\n                  target=\"#editor-field-{{ field_flat }}\"\n                  info=\"Clear field\"\n                  tooltip-placement=\"bottom\"></div>\n              </div>\n            </div>\n          </div>\n          <div\n            ng-if=\"schema | extract : field : \'type\' | inArray: [\'stringarray\', \'textarray\']\">\n            <label\n              for=\"editor-field-{{ field_flat }}\"\n              class=\"col-sm-3 control-label\"\n              ng-bind-html=\"schema | extract : field : \'label\'\"></label>\n            <div class=\"col-sm-9\">\n              <div class=\"input-group\">\n                <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n                <div class=\"form-control\" style=\"height: auto;min-height: 28px;max-height: 70px;overflow-y:scroll;\">\n                  <span\n                    ng-repeat=\"x in workspace | extract : field track by $index\"\n                    style=\"width: 230px; height: 20px; text-overflow: ellipsis; display: block;white-space: nowrap; overflow: hidden;\"\n                    ng-bind-html=\"x\">\n                  </span>\n                </div>\n                <a\n                  class=\"geodash-intent input-group-addon btn btn-primary btn-edit\"\n                  href=\"#\"\n                  data-intent-name=\"showModal\"\n                  data-intent-data=\"{{ html5data(\'showModal\', \'geodash-modal-edit-field\', field) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-pencil-square-o \"></i>\n                </a>\n                <div\n                  geodash-btn mode=\"clear\"\n                  target=\"#editor-field-{{ field_flat }}\"\n                  info=\"Clear field\"\n                  tooltip-placement=\"bottom\"></div>\n              </div>\n            </div>\n          </div>\n          <div\n            ng-if=\"schema | extract : field : \'type\' | inArray: [\'objectarray\', \'objarray\']\">\n            <label\n              for=\"editor-field-{{ field_flat }}\"\n              class=\"col-sm-3 control-label\"\n              ng-bind-html=\"schema | extract : field : \'label\'\"></label>\n            <div class=\"col-sm-9\">\n              <div class=\"input-group\">\n                <div geodash-btn-info info=\"{{ schema | extract : field : \'description\' }}\"></div>\n                <div class=\"form-control\" style=\"height: auto; max-width: 280px;min-height: 28px;max-height: 70px;overflow-y: scroll;\">\n                  <span\n                    ng-repeat=\"x in workspace| extract : field track by $index\"\n                    class=\"\"\n                    style=\"width: 230px; height: 20px; text-overflow: ellipsis; display: block;white-space: nowrap; overflow: hidden;\"\n                    ng-bind-html=\"x.title + \' (\'+x.id+\')\'\">\n                  </span>\n                </div>\n                <a\n                  class=\"geodash-intent input-group-addon btn btn-primary btn-edit\"\n                  href=\"#\"\n                  data-intent-name=\"showModal\"\n                  data-intent-data=\"{{ html5data(\'showModal\', \'geodash-modal-edit-field\', field) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-pencil-square-o \"></i>\n                </a>\n                <div\n                  geodash-btn mode=\"clear\"\n                  target=\"#editor-field-{{ field_flat }}\"\n                  info=\"Clear field\"\n                  tooltip-placement=\"bottom\"></div>\n              </div>\n            </div>\n          </div>\n        </div>\n      </div>\n    </div>\n    <hr>\n    <div class=\"form-group\">\n      <div class=\"col-sm-offset-3 col-sm-9\">\n        <button\n          type=\"button\"\n          class=\"btn btn-success\"\n          ng-click=\"saveConfig()\"\n          ng-disabled=\"\'change_geodashdashboard\' | inArray : perms | not\"\n        >Save</button>\n        <button\n          type=\"button\"\n          class=\"btn btn-success\"\n          ng-click=\"saveAsConfig()\"\n        >Save As ...</button>\n        <button\n          type=\"button\"\n          class=\"btn btn-default\">Reset</button>\n        <a\n          class=\"geodash-intent btn btn-primary\"\n          data-intent-name=\"showModal\"\n          data-intent-data=\"{{ config.html5data.modal_dashboard_config }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\">Config</a>\n        <a\n          class=\"geodash-intent btn btn-primary\"\n          data-intent-name=\"showModal\"\n          data-intent-data=\"{{ config.html5data.modal_dashboard_security }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\">Security</a>\n      </div>\n    </div>\n  </form>\n</div>\n";
+geodash.templates["modal_edit_field.tpl.html"] = "<div\n  id=\"geodash-modal-edit-field\"\n  class=\"geodash-controller geodash-controller-modal geodash-modal modal fade geodash-edit-field\"\n  tabindex=\"-1\"\n  role=\"dialog\"\n  aria-labelledby=\"myModalLabel\">\n  <div id=\"geodash-edit-field\" class=\"modal-dialog geodash-responsive\" role=\"document\">\n    <div\n      ng-if=\"field_flat | default_if_undefined: false\"\n      class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button geodash-btn-close></button>\n        <h4\n          id=\"myModalLabel\"\n          class=\"modal-title\"\n          ng-bind-html=\"modaleditfield_schema | extract : field : \'label\' | prepend : \'Edit / \' | md2html\"></h4>\n      </div>\n      <div class=\"modal-body\">\n        <ul class=\"nav nav-tabs nav-justified\" role=\"tablist\">\n          <li label=\"Input\" target=\"modal-edit-field-pane-input\" active=\"true\" geodash-tab></li>\n          <li label=\"YAML\" target=\"modal-edit-field-pane-yaml\" geodash-tab></li>\n          <li label=\"JSON\" target=\"modal-edit-field-pane-json\" geodash-tab></li>\n        </ul>\n        <div class=\"tab-content\">\n          <div\n            id=\"modal-edit-field-pane-input\"\n            role=\"tabpanel\"\n            class=\"tab-pane fade\"\n            style=\"padding: 10px;\">\n            <div\n              ng-if=\"modaleditfield_schema | extract : field : \'type\' | inArray: [\'text\', \'string\', \'markdown\', \'md\']\">\n              <textarea\n                id=\"modal-edit-field-{{ field_flat }}\"\n                name=\"modal-edit-field-{{ field_flat }}\"\n                class=\"form-control\"\n                placeholder=\"{{ modaleditfield_schema | extract : field : \'placeholder\' }}\"\n                rows=\"15\"\n                data-geodash-field-type=\"{{ modaleditfield_schema | extract : field : \'type\' }}\"\n                ng-required=\"modaleditfield_schema | extract : field : \'required\'\"\n                style=\"max-width: 100%;\"\n                ng-model=\"value_edit_field\"\n                ng-change=\"validateModalField(field_flat)\"></textarea>\n            </div>\n            <div\n              ng-if=\"modaleditfield_schema | extract : field : \'type\' | inArray: [\'textarray\', \'stringarray\']\">\n              <div class=\"input-group\">\n                <input\n                  id=\"editor-field-{{ field_flat }}-backend\"\n                  name=\"editor-field-{{ field_flat }}-backend\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  style=\"display:none;\">\n                <div\n                  class=\"input-group-addon btn btn-primary\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  ng-attr-title=\"{{ modaleditfield_schema | extract : field : \'description\' }}\">\n                  <i class=\"fa fa-info-circle\"></i>\n                </div>\n                <div\n                  id=\"editor-field-{{ field_flat }}-label\"\n                  name=\"editor-field-{{ field_flat }}-label\"\n                  class=\"input-group-addon\"\n                  ng-bind-html=\"modaleditfield_schema | extract : field : \'label\'\">\n                </div>\n                <input\n                  id=\"editor-field-{{ field_flat }}\"\n                  name=\"editor-field-{{ field_flat }}\"\n                  type=\"text\"\n                  class=\"typeahead form-control\"\n                  style=\"height: auto;\"\n                  data-geodash-field-type=\"{{ modaleditfield_schema | extract : field : \'type\' }}\"\n                  ng-required=\"modaleditfield_schema | extract : field : \'required\'\"\n                  aria-describedby=\"editor-field-{{ field_flat }}-label\"\n                  data-initial-data=\"{{ modaleditfield_schema | extract : field : \'source\' }}\"\n                  data-backend=\"editor-field-{{ field_flat }}-backend\"\n                  data-template-empty=\"<div class=&quot;alert alert-danger empty-message&quot;>Unable to find value</div>\"\n                  ng-keyup=\"keyUpOnField($event, field, field_flat)\">\n                <div\n                  class=\"input-group-addon btn btn-primary btn-show-options\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  title=\"Show Options.\"\n                  ng-click=\"showOptions($event, \'#editor-field-\'+field_flat)\">\n                  <i class=\"fa fa-chevron-down\"></i>\n                </div>\n                <div\n                  class=\"input-group-addon btn btn-success btn-add\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  title=\"Prepend to list of layers.\"\n                  ng-click=\"prependToField($event, field, field_flat)\">\n                  <i class=\"fa fa-plus\"></i>\n                </div>\n                <div\n                  class=\"input-group-addon btn btn-danger btn-clear\"\n                  data-target=\"#editor-field-{{ field_flat }}\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  title=\"Clear new layer text.\">\n                  <i class=\"fa fa-times\"></i>\n                </div>\n              </div>\n              <br>\n              <div\n                ng-repeat=\"x in modaleditfield_workspace | extract : field track by $index\"\n                class=\"input-group\"\n                style=\"margin-bottom: 4px;\">\n                <div\n                  class=\"input-group-addon btn btn-default\"\n                  style=\"font-weight: bold;\"\n                  ng-bind-html=\"$index\">\n                </div>\n                <div\n                  ng-class=\"$first ? \'input-group-addon btn btn-default\' : \'input-group-addon btn btn-primary\'\"\n                  ng-disabled=\"$first\"\n                  ng-click=\"up($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-arrow-up\"></i>\n                </div>\n                <div\n                  ng-class=\"$last ? \'input-group-addon btn btn-default\' : \'input-group-addon btn btn-primary\'\"\n                  ng-disabled=\"$last\"\n                  ng-click=\"down($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-arrow-down\"></i>\n                </div>\n                <input\n                  id=\"editor-field-{{ field_flat }}-{{ $index }}\"\n                  name=\"editor-field-{{ field_flat }}-{{ $index }}\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  ng-value=\"x\">\n                <div\n                  class=\"input-group-addon btn btn-danger btn-clear\"\n                  ng-click=\"subtractFromField($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-times\"></i>\n                </div>\n              </div>\n            </div>\n            <div\n              ng-if=\"modaleditfield_schema | extract : field : \'type\' | inArray: [\'objectarray\', \'objarray\']\">\n              <div>\n                <div\n                  class=\"btn btn-primary\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  ng-attr-title=\"{{ modaleditfield_schema | extract : field : \'description\' }}\">\n                  <i class=\"fa fa-info-circle\"></i>\n                </div>\n                <div\n                  class=\"btn btn-success btn-add geodash-intent\"\n                  data-toggle=\"tooltip\"\n                  data-placement=\"bottom\"\n                  title=\"Prepend to list.\"\n                  data-intent-name=\"switchModal\"\n                  data-intent-data=\"{{ html5data(\'switchModal\', config.that.id , config.edit.target, field, undefined) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-plus\"></i>\n                </div>\n              </div>\n              <br>\n              <div\n                ng-repeat=\"x in modaleditfield_workspace | extract : field track by $index\"\n                class=\"input-group\"\n                style=\"margin-bottom: 4px;\">\n                <div\n                  class=\"input-group-addon btn btn-default\"\n                  style=\"font-weight: bold;\"\n                  ng-bind-html=\"$index\">\n                </div>\n                <div\n                  ng-class=\"$first ? \'input-group-addon btn btn-default\' : \'input-group-addon btn btn-primary\'\"\n                  ng-disabled=\"$first\"\n                  ng-click=\"up($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-arrow-up\"></i>\n                </div>\n                <div\n                  ng-class=\"$last ? \'input-group-addon btn btn-default\' : \'input-group-addon btn btn-primary\'\"\n                  ng-disabled=\"$last\"\n                  ng-click=\"down($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-arrow-down\"></i>\n                </div>\n                <span\n                  id=\"editor-field-{{ field_flat }}-{{ $index }}\"\n                  name=\"editor-field-{{ field_flat }}-{{ $index }}\"\n                  type=\"text\"\n                  class=\"form-control\"\n                  ng-bind-html=\"x.title + \' (\'+x.id+\')\'\"></span>\n                <a\n                  class=\"geodash-intent input-group-addon btn btn-primary btn-edit\"\n                  href=\"#\"\n                  data-intent-name=\"switchModal\"\n                  data-intent-data=\"{{ html5data(\'switchModal\', config.that.id, config.edit.target, field, $index) }}\"\n                  data-intent-ctrl=\"{{ config.that.id }}\">\n                  <i class=\"fa fa-pencil-square-o \"></i>\n                </a>\n                <div\n                  class=\"input-group-addon btn btn-danger btn-clear\"\n                  ng-click=\"subtractFromField($event, field, field_flat, $index)\">\n                  <i class=\"fa fa-times\"></i>\n                </div>\n              </div>\n            </div>\n          </div>\n          <div\n            id=\"modal-edit-field-pane-yaml\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ value_edit_field | yaml : 8 }}</pre>\n          </div>\n          <div\n            id=\"modal-edit-field-pane-json\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ value_edit_field | json }}</pre>\n          </div>\n        </div>\n        <hr>\n        <div\n          class=\"btn btn-danger btn-clear\"\n          data-target=\"#modal-edit-field-{{ field_flat }}, #editor-field-{{ field_flat }}\">\n          <i class=\"fa fa-times\"></i>\n        </div>\n      </div>\n      <div class=\"modal-footer\">\n        <button\n          type=\"button\"\n          class=\"btn btn-success geodash-intent\"\n          data-intent-name=\"saveAndHide\"\n          data-intent-data=\"{{ html5data(\'saveAndHide\', config.that.id, config.save.target, config.save.fields) }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\"\n          ng-bind-html=\"modaleditfield_schema | extract : field : \'label\' | prepend : \'Save \' | md2html\"\n        ></button>\n        <button\n          type=\"button\"\n          class=\"btn btn-default geodash-intent\"\n          data-intent-name=\"hideModal\"\n          data-intent-data=\"{{ html5data(\'hideModal\', config.that.id) }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\"\n          ng-bind-html=\"\'Cancel\'\"></button>\n      </div>\n    </div>\n  </div>\n</div>\n";
+geodash.templates["modal_edit_object.tpl.html"] = "<div\n  id=\"geodash-modal-edit-object\"\n  class=\"geodash-controller geodash-controller-modal geodash-modal modal fade geodash-edit-object\"\n  tabindex=\"-1\"\n  role=\"dialog\"\n  aria-labelledby=\"myModalLabel\">\n  <div id=\"geodash-edit-object\" class=\"modal-dialog geodash-responsive\" role=\"document\">\n    <div\n      ng-if=\"objectIndex | default_if_undefined: -1 | gte: 0\"\n      class=\"modal-content\">\n      <div class=\"modal-header\">\n        <button\n          type=\"button\"\n          class=\"close geodash-intent\"\n          aria-hidden=\"true\"\n          data-intent-name=\"switchModal\"\n          data-intent-data=\"{{ html5data(\'switchModal\', config.that.id, \'geodash-modal-edit-field\', prefix_field) }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\"\n          ><i class=\"fa fa-times\"></i>\n        </button>\n        <h4\n          id=\"myModalLabel\"\n          class=\"modal-title\"\n          ng-bind-html=\"schema | extract : prefix_field : \'label\' | prepend : \'Edit / \' | append : \' / \' : object.id | md2html\"></h4>\n      </div>\n      <div class=\"modal-body\">\n        <ul class=\"nav nav-tabs nav-justified\" role=\"tablist\">\n          <li label=\"Input\" target=\"modal-edit-object-pane-input\" active=\"true\" geodash-tab></li>\n          <li label=\"YAML\" target=\"modal-edit-object-pane-yaml\" geodash-tab></li>\n          <li label=\"JSON\" target=\"modal-edit-object-pane-json\" geodash-tab></li>\n        </ul>\n        <div class=\"tab-content\">\n          <div\n            id=\"modal-edit-object-pane-input\"\n            role=\"tabpanel\"\n            class=\"tab-pane fade\"\n            style=\"padding: 10px;overflow-y: scroll; max-height:240px;\">\n            <form\n              novalidate\n              class=\"form-horizontal simple-form\"\n              ng-if=\"objectIndex != undefined\">\n              <!--\n                Doesn\'t rerun ng-repeat beacuse object_schema.fields is the same\n                Need ng-repeat to be forced to run again when field changes.\n                Throw in a fake ng-if on objectIndex??\n              -->\n              <div\n                ng-repeat=\"object_field in object_schema.fields track by $index\"\n                ng-init=\"objectFieldIndex = $index; object_field_id = object_field.id; object_field_id_flat = (object_field.id | replace : \'.\' : \'__\' | prepend : prefix_field_flat : \'__\' : objectIndex : \'__\')\"\n                class=\"form-group\"\n                style=\"margin:0; padding-top: 10px; padding-bottom: 10px;\"\n                ng-if=\"when(object_field)\"\n                <!-- Start -->\n                <div\n                  ng-if=\"object_field | extract : \'type\' | inArray: [\'text\', \'string\', \'markdown\', \'md\']\">\n                  <label\n                    for=\"editor-object-field-{{ object_field_id_flat }}\"\n                    class=\"col-sm-3 control-label\"\n                    ng-bind-html=\"object_field | extract : \'label\'\"></label>\n                  <div class=\"col-sm-9\">\n                    <div\n                      ng-if=\"object_field | extract : \'multiline\' | default_if_undefined: \'false\' | inArray: [false, \'false\', \'no\', 0]\"\n                      class=\"input-group\">\n                      <div\n                        geodash-btn-info info=\"{{ object_field | extract : \'description\' }}\"></div>\n                      <input\n                        ng-if=\"object_field | extract : \'options\' | default_if_undefined : [] | length | eq: 0\"\n                        id=\"editor-object-field-{{ object_field_id_flat }}\"\n                        name=\"editor-object-field-{{ object_field_id_flat }}\"\n                        type=\"text\"\n                        class=\"form-control\"\n                        placeholder=\"{{ object_field | extract : \'placeholder\' }}\"\n                        data-geodash-field-type=\"{{ object_field | extract : \'type\' }}\"\n                        ng-required=\"object_field | extract : \'required\'\"\n                        ng-value=\"modaleditobject_workspace_flat | extract : object_field_id_flat\"\n                        ng-model=\"modaleditobject_workspace_flat[object_field_id_flat]\"\n                        ng-change=\"validateField(object_field_id_flat)\">\n                      <input\n                        ng-if=\"object_field | extract : \'options\' | default_if_undefined : [] | length | gt: 0\"\n                        id=\"editor-object-field-{{ object_field_id_flat }}-backend\"\n                        name=\"editor-object-field-{{ object_field_id_flat }}-backend\"\n                        type=\"text\"\n                        class=\"form-control\"\n                        style=\"display:none;\"\n                        ng-value=\"modaleditobject_workspace_flat | extract : object_field_id_flat\"\n                        ng-model=\"modaleditobject_workspace_flat[object_field_id_flat]\"\n                        ng-change=\"validateField(object_field_id_flat)\">\n                      <input\n                        ng-if=\"object_field | extract : \'options\' | default_if_undefined : [] | length | gt: 0\"\n                        id=\"editor-object-field-{{ object_field_id_flat }}\"\n                        name=\"editor-object-field-{{ object_field_id_flat }}\"\n                        type=\"text\"\n                        class=\"typeahead form-control\"\n                        placeholder=\"{{ object_field | extract : \'placeholder\' }}\"\n                        data-geodash-field-type=\"{{ object_field | extract : \'type\' }}\"\n                        data-initial-data=\"{{ object_field | extract : \'options\' }}\"\n                        data-backend=\"editor-object-field-{{ object_field_id_flat }}-backend\"\n                        ng-value=\"modaleditobject_workspace_flat | extract : object_field_id_flat\">\n                      <div\n                        ng-if=\"object_field | extract : \'options\' | default_if_undefined : [] | length | gt: 0\"\n                        class=\"input-group-addon btn btn-primary btn-show-options\"\n                        data-toggle=\"tooltip\"\n                        data-placement=\"bottom\"\n                        title=\"Show Options.\"\n                        ng-click=\"showOptions($event, \'#editor-object-field-\' + object_field_id_flat)\">\n                        <i class=\"fa fa-chevron-down\"></i>\n                      </div>\n                      <div\n                        class=\"input-group-addon btn btn-danger btn-clear\"\n                        data-target=\"#editor-object-field-{{ object_field_id_flat }}\">\n                        <i class=\"fa fa-times\"></i>\n                      </div>\n                    </div>\n                    <div\n                      ng-if=\"object_field | extract : \'multiline\' | default_if_undefined: \'false\' | inArray: [true, \'true\', \'yes\', 1]\"\n                      class=\"input-group\">\n                      <div\n                        class=\"input-group-addon btn btn-primary\"\n                        data-toggle=\"tooltip\"\n                        data-placement=\"left\"\n                        ng-attr-title=\"{{ object_field | extract : \'description\' }}\">\n                        <i class=\"fa fa-info-circle\"></i>\n                      </div>\n                      <textarea\n                        id=\"editor-object-field-{{ object_field_id_flat }}\"\n                        name=\"editor-object-field-{{ object_field_id_flat }}\"\n                        class=\"form-control\"\n                        placeholder=\"{{ object_field | extract : \'placeholder\' }}\"\n                        rows=\"3\"\n                        data-geodash-field-type=\"{{ object_field | extract : \'type\' }}\"\n                        ng-required=\"object_field | extract : \'required\'\"\n                        style=\"max-width: 100%;\"\n                        ng-model=\"modaleditobject_workspace_flat[object_field_id_flat]\"\n                        ng-change=\"validateField(object_field_id_flat)\"\n                        ng-bind-html=\"modaleditobject_workspace_flat | extract : object_field_id_flat\"></textarea>\n                      <div\n                        class=\"input-group-addon btn btn-danger btn-clear\"\n                        data-target=\"#editor-object-field-{{ object_field_id_flat }}\">\n                        <i class=\"fa fa-times\"></i>\n                      </div>\n                    </div>\n                  </div>\n                </div>\n                <div\n                  ng-if=\"object_field | extract : \'type\' | inArray: [\'int\', \'integer\']\">\n                  <label\n                    for=\"editor-object-field-{{ object_field_id_flat }}\"\n                    class=\"col-sm-3 control-label\"\n                    ng-bind-html=\"object_field | extract : \'label\'\"></label>\n                  <div class=\"col-sm-9 input-group\">\n                    <div\n                      class=\"input-group-addon btn btn-primary\"\n                      data-toggle=\"tooltip\"\n                      data-placement=\"left\"\n                      ng-attr-title=\"{{ object_field | extract : \'description\' }}\">\n                      <i class=\"fa fa-info-circle\"></i>\n                    </div>\n                    <input\n                      id=\"editor-object-field-{{ object_field_id_flat }}\"\n                      name=\"editor-object-field-{{ object_field_id_flat }}\"\n                      type=\"number\"\n                      class=\"form-control\"\n                      placeholder=\"{{ object_field | extract : \'placeholder\' }}\"\n                      data-geodash-field-type=\"{{ object_field | extract : \'type\' }}\"\n                      ng-required=\"object_field | extract : \'required\'\"\n                      ng-attr-min=\"{{ object_field | extract : \'minValue\' | default_if_undefined: \'\' }}\"\n                      ng-attr-max=\"{{ object_field | extract : \'maxValue\' | default_if_undefined: \'\' }}\"\n                      ng-value=\"modaleditobject_workspace_flat | extract : object_field_id_flat\"\n                      ng-model=\"modaleditobject_workspace_flat[object_field_id_flat]\"\n                      ng-change=\"validateField(object_field_id_flat)\">\n                    <div\n                      class=\"input-group-addon btn btn-danger btn-clear\"\n                      data-target=\"#editor-object-field-{{ object_field_id_flat }}\">\n                      <i class=\"fa fa-times\"></i>\n                    </div>\n                  </div>\n                </div>\n                <div\n                  ng-if=\"object_field | extract : \'type\' | inArray: [\'boolean\', \'checkbox\']\"\n                  class=\"col-sm-offset-2 col-sm-10\">\n                  <div class=\"checkbox\">\n                    <label>\n                      <input\n                        type=\"checkbox\"\n                        ng-checked=\"modaleditobject_workspace_flat | extract : object_field_id_flat\"\n                        ng-model=\"modaleditobject_workspace_flat[object_field_id_flat]\"\n                        ng-change=\"validateField(object_field_id_flat)\"> {{ object_field | extract : \'label\' }}\n                    </label>\n                  </div>\n                </div>\n                <div\n                  ng-if=\"object_field | extract : \'type\' | inArray: [\'stringarray\', \'textarray\']\">\n                  <label\n                    for=\"editor-object-field-{{ object_field_id_flat }}\"\n                    class=\"col-sm-3 control-label\"\n                    ng-bind-html=\"object_field | extract : \'label\'\"></label>\n                  <div class=\"col-sm-9\">\n                    <div class=\"input-group\">\n                      <div\n                        class=\"input-group-addon btn btn-primary\"\n                        data-toggle=\"tooltip\"\n                        data-placement=\"left\"\n                        ng-attr-title=\"{{ object_field | extract : \'description\' }}\">\n                        <i class=\"fa fa-info-circle\"></i>\n                      </div>\n                      <pre class=\"form-control\" style=\"height: auto;max-height: 100px;\">\n                        <span\n                          ng-repeat=\"x in modaleditobject_workspace | extract : field track by $index\"\n                          class=\"input-group\"\n                          ng-bind-html=\"x\">\n                        </span>\n                      </pre>\n                      <div\n                        class=\"input-group-addon btn btn-danger btn-clear\"\n                        data-target=\"#editor-object-field-{{ object_field_id_flat }}\">\n                        <i class=\"fa fa-times\"></i>\n                      </div>\n                    </div>\n                  </div>\n                </div>\n                <div\n                  ng-if=\"object_field | extract : \'type\' | inArray: [\'objectarray\', \'objarray\']\">\n                  <label\n                    for=\"editor-object-field-{{ object_field_id_flat }}\"\n                    class=\"col-sm-3 control-label\"\n                    ng-bind-html=\"object_field | extract : \'label\'\"></label>\n                  <div class=\"col-sm-9\">\n                    <div class=\"input-group\">\n                      <div\n                        class=\"input-group-addon btn btn-primary\"\n                        data-toggle=\"tooltip\"\n                        data-placement=\"left\"\n                        ng-attr-title=\"{{ object_field | extract : \'description\' }}\">\n                        <i class=\"fa fa-info-circle\"></i>\n                      </div>\n                      <pre class=\"form-control\" style=\"height: auto; max-width: 280px;max-height: 100px;\">\n                        <span\n                          ng-repeat=\"x in modaleditobject_workspace| extract : object_field_id track by $index\"\n                          class=\"input-group\"\n                          style=\"cusor: default;\"\n                          ng-bind-html=\"x.title + \' (\'+x.id+\')\'\"\n                          disabled>\n                        </span>\n                      </pre>\n                      <div\n                        class=\"input-group-addon btn btn-danger btn-clear\"\n                        data-target=\"#editor-object-field-{{ object_field_id_flat }}\">\n                        <i class=\"fa fa-times\"></i>\n                      </div>\n                    </div>\n                  </div>\n                </div>\n                <!-- End -->\n              </div>\n            </form>\n          </div>\n          <div\n            id=\"modal-edit-object-pane-yaml\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h4 ng-bind-html=\"object_field | extract : \'schema\' : \'verbose_singular\' | default_if_undefined : \'Object\' | append : \' as YAML\'\"></h4>\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ object | yaml : 8 }}</pre>\n          </div>\n          <div\n            id=\"modal-edit-object-pane-json\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h4 ng-bind-html=\"object_field | extract : \'schema\' : \'verbose_singular\' | default_if_undefined : \'Object\' | append : \' as JSON\'\"></h4>\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ object | json }}</pre>\n          </div>\n        </div>\n      </div>\n      <div class=\"modal-footer\">\n        <button\n          type=\"button\"\n          class=\"btn btn-success geodash-intent\"\n          data-intent-name=\"switchModal\"\n          data-intent-data=\"{{ html5data(\'saveObjectAndSwitch\', config.that.id, config.save.target, prefix_field, prefix_field_flat, config.save.fields) }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\"\n          ng-bind-html=\"object_field | extract : \'schema\' : \'verbose_singular\' | default_if_undefined : \'Object\' | prepend : \'Save \'\"\n        ></button>\n        <button\n          type=\"button\"\n          class=\"btn btn-default geodash-intent\"\n          data-intent-name=\"switchModal\"\n          data-intent-data=\"{{ html5data(\'switchModal\', config.that.id, config.save.target, prefix_field) }}\"\n          data-intent-ctrl=\"{{ config.that.id }}\"\n          ng-bind-html=\"schema | extract : prefix_field : \'label\' | prepend : \'Back to \' | md2html\"\n        ></button>\n      </div>\n    </div>\n  </div>\n</div>\n";
+geodash.templates["geodash_modal_dashboard_security.tpl.html"] = "<div class=\"modal-dialog geodash-responsive\" role=\"document\">\n  <div class=\"modal-content\">\n    <div class=\"modal-header\">\n      <button geodash-btn-close></button>\n      <h4 class=\"modal-title\" id=\"myModalLabel\">Security / {{ workspace.config.title }}</h4>\n    </div>\n    <div class=\"modal-body\">\n      <div>\n        <!-- Nav tabs -->\n        <ul class=\"nav nav-tabs\" role=\"tablist\">\n          <li label=\"YAML\" target=\"#modal-dashboard-security-yaml\" geodash-tab></li>\n          <li label=\"JSON\" target=\"#modal-dashboard-security-json\" geodash-tab></li>\n        </ul>\n        <div class=\"tab-content\">\n          <div\n            id=\"modal-dashboard-security-yaml\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h3>Security as YAML</h3>\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ workspace.security | yaml : 8 }}</pre>\n          </div>\n          <div\n            id=\"modal-dashboard-security-json\"\n            class=\"tab-pane fade\"\n            role=\"tabpanel\"\n            style=\"padding: 10px;\">\n            <h3>Security as JSON</h3>\n            <pre style=\"word-wrap: break-word; white-space: pre-wrap;\">{{ workspace.security | json }}</pre>\n          </div>\n        </div>\n      </div>\n    </div>\n    <div class=\"modal-footer\">\n      <button type=\"button\" class=\"btn btn-default\" data-dismiss=\"modal\">Close</button>\n    </div>\n  </div>\n</div>\n";
 
 var MONTHS_NUM = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 //Array(12).fill().map((x,i)=>i)
@@ -2032,9 +2108,6 @@ geodash.filters["md2html"] = function()
     {
       var converter = new showdown.Converter();
       html = converter.makeHtml(text);
-      // Remove Prefix/Suffix Paragraph Tags
-      
-      //html = html.substring("<p>".length, html.length - "</p>".length);
 
       // Open Links in New Windows
       html = html.replace(new RegExp("(<a .*?)>(.*?)</a>", "gi"), '$1 target="_blank">$2</a>');
@@ -2047,6 +2120,16 @@ geodash.filters["md2html"] = function()
 
       // Replace extra new lines before paragraph tags, which add their own margin by default
       html = html.replace(new RegExp("<br><br><p>", "gi"),'<p>');
+
+      // If one enclosing paragraph element, then flatten it.
+      var matches = html.match(new RegExp("^<p(.*?)>(.*?)</p>", "gi"));
+      if(angular.isDefined(matches) && matches.length == 1)  // If only 1 match
+      {
+        if(matches[0] == html) // Fully enclosing
+        {
+          html = html.substring("<p>".length, html.length - "</p>".length);
+        }
+      }
 
       return html;
     }
@@ -2358,6 +2441,14 @@ geodash.filters["prepend"] = function()
   };
 };
 
+geodash.filters["parseTrue"] = function()
+{
+  return function(value)
+  {
+      return ['on', 'true', 't', '1', 1, true].indexOf(value) != -1;
+  };
+};
+
 geodash.filters["ternary"] = function()
 {
   return function(value, t, f)
@@ -2552,6 +2643,36 @@ geodash.filters["formatArray"] = function()
       {
           return arr;
       }
+  };
+};
+
+geodash.filters["formatMonth"] = function()
+{
+  return function(value, type)
+  {
+    if(value != undefined && value !== "")
+    {
+      if(type == "long")
+      {
+        return months_long[value-1];
+      }
+      else if(type == "short3" || type == "short_3")
+      {
+        return months_short_3[value-1];
+      }
+      else if(type == "int2")
+      {
+        return value < 10 ? ('0'+ value.toString()) : value.toString();
+      }
+      else
+      {
+        return value.toString();
+      }
+    }
+    else
+    {
+      return ""
+    }
   };
 };
 
@@ -2800,6 +2921,245 @@ geodash.filters["url_describefeaturetype"] = function()
     };
 };
 
+geodash.handlers["clickedOnMap"] = function($scope, $interpolate, $http, $q, event, args) {
+  console.log('event', event);
+  console.log('args', args);
+  //
+  var $scope = geodash.api.getScope("geodash-main");
+  var z = $scope.state.view.z;
+  var visibleFeatureLayers = $scope.state.view.featurelayers;
+  console.log("visibleFeatureLayers", visibleFeatureLayers);
+  var featurelayers_by_featuretype = {};
+  var fields_by_featuretype = {};
+  var urls = [];
+  for(var i = 0; i < visibleFeatureLayers.length; i++)
+  {
+    var fl = geodash.api.getFeatureLayer(visibleFeatureLayers[i], {"scope": $scope});
+    if("wfs" in fl && fl.wfs != undefined)
+    {
+      var params = {
+        service: "wfs",
+        version: fl.wfs.version,
+        request: "GetFeature",
+        srsName: "EPSG:4326",
+      };
+
+      var targetLocation = new L.LatLng(args.lat, args.lon);
+      var bbox = geodash.tilemath.point_to_bbox(args.lon, args.lat, z, 4).join(",");
+      var typeNames = fl.wfs.layers || fl.wms.layers || [] ;
+      for(var j = 0; j < typeNames.length; j++)
+      {
+        typeName = typeNames[j];
+        var url = fl.wfs.url + "?" + $.param($.extend(params, {typeNames: typeName, bbox: bbox}));
+        urls.push(url);
+        fields_by_featuretype[typeName.toLowerCase()] = geodash.layers.aggregate_fields(fl);
+        featurelayers_by_featuretype[typeName.toLowerCase()] = fl;
+      }
+    }
+  }
+
+  $q.all(geodash.http.build_promises($http, urls)).then(function(responses){
+    var features = geodash.http.build_features(responses, fields_by_featuretype);
+    console.log("Features: ", features);
+    if(features.length > 0 )
+    {
+      var featureAndLocation = geodash.vecmath.getClosestFeatureAndLocation(features, targetLocation);
+      var fl = featurelayers_by_featuretype[featureAndLocation.feature.featuretype];
+      $scope.$broadcast("openPopup", {
+        'featureLayer': fl,
+        'feature': featureAndLocation.feature,
+        'location': {
+          'lon': featureAndLocation.location.lng,
+          'lat': featureAndLocation.location.lat
+        }
+      });
+    }
+  });
+};
+
+geodash.handlers["hideLayer"] = function($scope, $interpolate, $http, $q, event, args) {
+    console.log('event', event);
+    console.log('args', args);
+    var $scope = geodash.api.getScope("geodash-main");
+    var layer = args.layer;
+    var i = $.inArray(layer, $scope.state.view.featurelayers);
+    if(i != -1)
+    {
+      $scope.state.view.featurelayers.splice(i, 1);
+      $scope.refreshMap($scope.state);
+    }
+};
+
+geodash.handlers["hideLayers"] = function($scope, $interpolate, $http, $q, event, args) {
+    console.log('event', event);
+    console.log('args', args);
+    var $scope = geodash.api.getScope("geodash-main");
+    var layers = args.layers;
+    for(var i = 0; i < layers.length; i++)
+    {
+      var layer = args.layers[i];
+      var j = $.inArray(layer, $scope.state.view.featurelayers);
+      if(j != -1)
+      {
+        $scope.state.view.featurelayers.splice(j, 1);
+        $scope.refreshMap($scope.state);
+      }
+    }
+};
+
+geodash.handlers["layerLoaded"] = function($scope, $interpolate, $http, $q, event, args) {
+    var $scope = geodash.api.getScope("geodash-main");
+    var type = args.type;
+    var layer = args.layer;
+    var visible = args.visible != undefined ? args.visible : true;
+    if(type == "featurelayer")
+    {
+      if(visible)
+      {
+        $scope.state.view.featurelayers.push(layer);
+      }
+    }
+    else if(type == "baselayer")
+    {
+      $scope.state.view.baselayer = layer;
+    }
+};
+
+geodash.handlers["requestToggleComponent"] = function($scope, $interpolate, $http, $q, event, args) {
+  geodash.api.getScope("geodash-main").$broadcast("toggleComponent", args);
+};
+
+geodash.handlers["showLayer"] = function($scope, $interpolate, $http, $q, event, args) {
+    console.log('event', event);
+    console.log('args', args);
+    var $scope = geodash.api.getScope("geodash-main");
+    var layer = args.layer;
+    if($.inArray(layer, $scope.state.view.featurelayers) == -1)
+    {
+      $scope.state.view.featurelayers.push(layer);
+      $scope.refreshMap($scope.state);
+    }
+};
+
+geodash.handlers["showLayers"] = function($scope, $interpolate, $http, $q, event, args) {
+    console.log('event', event);
+    console.log('args', args);
+    var $scope = geodash.api.getScope("geodash-main");
+    var layers = args.layers;
+    for(var i = 0; i < layers.length; i++)
+    {
+      var layer = layers[i];
+      if($.inArray(layer, $scope.state.view.featurelayers) == -1)
+      {
+        $scope.state.view.featurelayers.push(layer);
+        $scope.refreshMap($scope.state);
+      }
+    }
+};
+
+geodash.handlers["switchBaseLayer"] = function($scope, $interpolate, $http, $q, event, args) {
+    console.log('event', event);
+    console.log('args', args);
+    var $scope = geodash.api.getScope("geodash-main");
+    $scope.state.view.baselayer = args.layer;
+    $scope.refreshMap($scope.state);
+};
+
+geodash.handlers["zoomToLayer"] = function($scope, $interpolate, $http, $q, event, args) {
+    var $scope = geodash.api.getScope("geodash-main");
+    var layer = args.layer;
+    var i = $.inArray(layer, $scope.state.view.featurelayers);
+    if(i != -1)
+    {
+      $scope.$broadcast("changeView", {'layer': layer});
+    }
+};
+
+geodash.handlers["toggleComponent"] = function($scope, $interpolate, $http, $q, event, args) {
+  console.log('event', event);
+  console.log('args', args);
+  //
+  var component = args.component;
+  var position = args.position;
+  var classes = component+"-open "+component+"-"+position+"-open";
+  $(args.selector).toggleClass(classes);
+  setTimeout(function(){
+    $scope.live["map"].invalidateSize({
+      animate: true,
+      pan: false
+    });
+  },2000);
+};
+
+geodash.handlers["filterChanged"] = function($scope, $interpolate, $http, $q, event, args) {
+  console.log('event', event);
+  console.log('args', args);
+  //
+  var $scope = geodash.api.getScope("geodash-main");
+  $scope.$apply(function () {
+    $scope.state.filters[args["layer"]] = $.extend(
+      $scope.state.filters[args["layer"]],
+      args["filter"]);
+    var url = buildPageURL($interpolate, $scope.map_config, $scope.state);
+    if(url != undefined)
+    {
+      history.replaceState(state, "", url);
+    }
+    $scope.refreshMap($scope.state);
+  });
+};
+
+geodash.handlers["selectStyle"] = function($scope, $interpolate, $http, $q, event, args) {
+    console.log('event', event);
+    console.log('args', args);
+    //
+    var $scope = geodash.api.getScope("geodash-main");
+    $scope.$apply(function () {
+        $scope.state.styles[args["layer"]] = args["style"];
+        var url = buildPageURL($interpolate, $scope.map_config, $scope.state);
+        if(url != undefined)
+        {
+          history.replaceState(state, "", url);
+        }
+        $scope.refreshMap($scope.state);
+    });
+};
+
+geodash.handlers["stateChanged"] = function($scope, $interpolate, $http, $q, event, args) {
+  console.log('event', event);
+  console.log('args', args);
+  //
+  var $scope = geodash.api.getScope("geodash-main");
+  $scope.$apply(function () {
+    $scope.state = $.extend($scope.state, args);
+    var url = buildPageURL($interpolate, $scope.map_config, $scope.state);
+    if(url != undefined)
+    {
+      history.replaceState(state, "", url);
+    }
+    $scope.refreshMap($scope.state);
+  });
+};
+
+geodash.handlers["viewChanged"] = function($scope, $interpolate, $http, $q, event, args) {
+  console.log('event', event);
+  console.log('args', args);
+  //
+  var $scope = geodash.api.getScope("geodash-main");
+  $scope.state.view = $.extend($scope.state.view, args);
+  var url = buildPageURL($interpolate, $scope.map_config, $scope.state);
+  if(url != undefined)
+  {
+    history.replaceState(state, "", url);
+  }
+  // $scope.$on already wraps $scope.$apply
+  /*$scope.$apply(function () {
+      $scope.state.view = $.extend($scope.state.view, args);
+      var url = buildPageURL("countryhazardmonth_detail", state);
+      history.replaceState(state, "", url);
+  });*/
+};
+
 geodash.directives["ngX"] = function(){
   return {
     scope: true,
@@ -2925,14 +3285,17 @@ geodash.directives["geodashBtnInfo"] = function(){
   };
 };
 
-geodash.directives["geodashBtnClear"] = function(){
+geodash.directives["geodashBtn"] = function(){
   return {
     restrict: 'EA',
     replace: true,
     scope: {
-      'target': '@target'
+      'mode': '@mode',
+      'target': '@target',
+      'info': '@info',
+      'placement': '@tooltipPlacement'
     },
-    templateUrl: 'geodash_btn_clear.tpl.html',
+    templateUrl: 'geodash_btn.tpl.html',
     link: function ($scope, element, attrs){}
   };
 };
@@ -3196,6 +3559,42 @@ geodash.directives["geodashMapOverlays"] = function(){
   };
 };
 
+geodash.directives["geodashSidebarToggleLeft"] = function(){
+  return {
+    restrict: 'EA',
+    replace: true,
+    scope: {
+      "selector": "@selector"
+    },
+    templateUrl: 'geodash_sidebar_toggle_left.tpl.html',
+    link: function ($scope, $element, attrs){
+      setTimeout(function(){
+
+        $('[data-toggle="tooltip"]', $element).tooltip();
+
+      },10);
+    }
+  };
+};
+
+geodash.directives["geodashSidebarToggleRight"] = function(){
+  return {
+    restrict: 'EA',
+    replace: true,
+    scope: {
+      "selector": "@selector"
+    },
+    templateUrl: 'geodash_sidebar_toggle_right.tpl.html',
+    link: function ($scope, $element, attrs){
+      setTimeout(function(){
+
+        $('[data-toggle="tooltip"]', $element).tooltip();
+
+      },10);
+    }
+  };
+};
+
 geodash.directives["geodashserverModalWelcome"] = function(){
   return {
     controller: ['$scope', function($scope) {
@@ -3253,6 +3652,16 @@ geodash.directives["geodashModalEditObject"] = function(){
     scope: {},
     //scope: true,
     templateUrl: 'modal_edit_object.tpl.html',
+    link: function ($scope, element, attrs){}
+  };
+};
+
+geodash.directives["geodashModalDashboardSecurity"] = function(){
+  return {
+    restrict: 'EA',
+    replace: true,
+    scope: true,  // Inherit exact scope from parent controller
+    templateUrl: 'geodash_modal_dashboard_security.tpl.html',
     link: function ($scope, element, attrs){}
   };
 };
@@ -3383,8 +3792,32 @@ var init_map = function(opts)
   return map;
 };
 geodash.controllers["controller_map_map"] = function(
-  $rootScope, $scope, $element, $compile, $interpolate, $templateCache,
+  $rootScope, $scope, $element, $http, $q,
+  $compile, $interpolate, $templateCache,
   state, map_config, live) {
+  //////////////////////////////////////
+  $scope.processEvent = function(event, args)
+  {
+    var c = $.grep(geodash.meta.controllers, function(x, i){
+      return x['name'] == 'controller_map_map';
+    })[0];
+
+    for(var i = 0; i < c.handlers.length; i++)
+    {
+      if(c.handlers[i]['event'] == event.name)
+      {
+        geodash.handlers[c.handlers[i]['handler']]($scope, $interpolate, $http, $q, event, args);
+      }
+    }
+  };
+
+  var c = $.grep(geodash.meta.controllers, function(x, i){
+    return x['name'] == 'controller_map_map';
+  })[0];
+  for(var i = 0; i < c.handlers.length; i++)
+  {
+    $scope.$on(c.handlers[i]['event'], $scope.processEvent);
+  }
   //////////////////////////////////////
   var listeners =
   {
@@ -3457,7 +3890,7 @@ geodash.controllers["controller_map_map"] = function(
   }
   //////////////////////////////////////
   // Sidebar Toggle
-  $("#geodash-map-sidebar-toggle-right").click(function (){
+  /*$("#geodash-map-sidebar-toggle-right").click(function (){
     $(this).toggleClass("sidebar-open sidebar-right-open");
     $("#geodash-sidebar-right, #geodash-map").toggleClass("sidebar-open sidebar-right-open");
     setTimeout(function(){
@@ -3466,7 +3899,21 @@ geodash.controllers["controller_map_map"] = function(
         pan: false
       });
     },2000);
-  });
+  });*/
+  /*$scope.on$('toggleComponent', function (event, args){
+    console.log("Event: ", event);
+    console.log("Args: ", args);
+    var component = args.component;
+    var position = args.position;
+    var classes = component+"-open "+component+"-"+position+"-open";
+    $(args.selector).toggleClass(classes);
+    setTimeout(function(){
+      live["map"].invalidateSize({
+        animate: true,
+        pan: false
+      });
+    },2000);
+  });*/
   //////////////////////////////////////
   $scope.$on("refreshMap", function(event, args) {
     // Forces Refresh
@@ -3551,6 +3998,13 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
           "workspace_flat": ["source", "workspace_flat"]//,
           //"map_config_schema": ["source", "schema", "config"],
           //"map_config_schema_flat": ["source", "schema_flat", "config"]
+        }
+      },
+      "modal_dashboard_security": {
+        "id": "geodash-modal-dashboard-security",
+        "dynamic": {
+          "workspace": ["source", "workspace"],
+          "workspace_flat": ["source", "workspace_flat"]
         }
       }
     }
@@ -3710,12 +4164,16 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
             'X-CSRFToken': $cookies['csrftoken']
           }
       };
-      $http.post('/api/dashboard/'+slug+'/config/save', $scope.workspace.config, httpConfig).success(function(data)
+      var payload = {
+        'config': $scope.workspace.config,
+        'security': $scope.workspace.security
+      };
+      $http.post('/api/dashboard/'+slug+'/config/save', payload, httpConfig).success(function(data)
       {
         console.log(data);
         if(data.success)
         {
-          if(data.map_config.slug != slug)
+          if(data.config.slug != slug)
           {
             window.location.href = '/dashboard/'+data.config.slug;
           }
@@ -3749,7 +4207,11 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
             'X-CSRFToken': $cookies['csrftoken']
           }
       };
-      $http.post('/api/dashboard/config/new', $scope.workspace.config, httpConfig).success(function(data)
+      var payload = {
+        'config': $scope.workspace.config,
+        'security': $scope.workspace.security
+      };
+      $http.post('/api/dashboard/config/new', payload, httpConfig).success(function(data)
       {
         console.log(data);
         if(data.success)
@@ -3779,8 +4241,12 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
       "id": "geodash-modal-edit-field"
     },
     "workspace": {
-      "workspace": "modaleditfield_workspace",
-      "workspace_flat": "modaleditfield_workspace_flat"
+      "workspace": "modaleditfield_workspace", // Variable name to temporarily store value
+      "workspace_flat": "modaleditfield_workspace_flat"  // Variable name to temporarily store value
+    },
+    "schema": {
+      "schema": "modaleditfield_schema",  // Variable name to temporarily store value
+      "schema_flat": "modaleditfield_schema_flat"  // Variable name to temporarily store value
     },
     "edit": {
       "target": "geodash-modal-edit-object",
@@ -3796,6 +4262,7 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
   //////////////////////////////////
   $scope.html5data = geodashserver.html5data;
   $scope.updateValue = geodash.api.updateValue;
+  $scope.setValue = geodash.api.setValue;
   $scope.value_edit_field = null;
   //////////////////////////////////
   $scope.showOptions = geodash.ui.showOptions;
@@ -3809,8 +4276,8 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
 
     $scope.updateValue(
       field_flat,
-      $scope[$scope.config.workspace.map_config_flat],
-      $scope[$scope.config.workspace.map_config]);
+      $scope[$scope.config.workspace.workspace_flat],
+      $scope[$scope.config.workspace.workspace]);
   };
 
   $scope.updateValues = function(field_flat_array)
@@ -3823,10 +4290,11 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
 
   $scope.up = function($event, field, field_flat, $index)
   {
-    var map_config = $scope[$scope.config.workspace.map_config];
-    var map_config_flat = $scope[$scope.config.workspace.map_config_flat];
-    var currentValue = extract(field.split("."), map_config);
-    if(Array.isArray(currentValue))
+    var workspace = $scope[$scope.config.workspace.workspace];
+    var workspace_flat = $scope[$scope.config.workspace.workspace_flat];
+    var currentValue = extract(field.split("."), workspace);
+    var fieldType = extract(field.split("."), $scope[$scope.config.schema.schema]).type;
+    if(fieldType == "stringarray" || fieldType == "textarray" || fieldType == "objectarray")
     {
       if($index > 0)
       {
@@ -3835,29 +4303,24 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
           currentValue[$index],
           currentValue[$index - 1],
           currentValue.slice($index + 1));
-        map_config[field] = newValue;
-
+        $scope.setValue(field_flat, currentValue, workspace);  // field, value, target
         $.each(geodash.api.flatten(newValue), function(i, x){
-          map_config_flat[field_flat+"__"+i] = x;
+          workspace_flat[field_flat+"__"+i] = x;
         });
       }
     }
     else if(angular.isNumber(currentValue))
     {
-      map_config[field_flat] = currentValue + 1;
-
-      $scope.updateValue(
-        field_flat,
-        $scope[$scope.config.workspace.map_config_flat],
-        $scope[$scope.config.workspace.map_config]);
+      workspace_flat[field_flat] = currentValue + 1;
+      $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
     }
   };
 
   $scope.down = function($event, field, field_flat, $index)
   {
-    var map_config = $scope[$scope.config.workspace.map_config];
-    var map_config_flat = $scope[$scope.config.workspace.map_config_flat];
-    var currentValue = extract(field.split("."), map_config);
+    var workspace = $scope[$scope.config.workspace.workspace];
+    var workspace_flat = $scope[$scope.config.workspace.workspace_flat];
+    var currentValue = extract(field.split("."), workspace);
     if(Array.isArray(currentValue))
     {
       if($index < currentValue.length - 1)
@@ -3867,20 +4330,16 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
           currentValue[$index + 1],
           currentValue[$index],
           currentValue.slice($index + 2));
-        map_config[field] = newValue;
+        $scope.setValue(field_flat, currentValue, workspace);  // field, value, target
         $.each(geodash.api.flatten(newValue), function(i, x){
-          map_config_flat[field_flat+"__"+i] = x;
+          workspace_flat[field_flat+"__"+i] = x;
         });
       }
     }
     else if(angular.isNumber(currentValue))
     {
-      map_config_flat[field_flat] = currentValue - 1;
-
-      $scope.updateValue(
-        field_flat,
-        $scope[$scope.config.workspace.map_config_flat],
-        $scope[$scope.config.workspace.map_config]);
+      workspace_flat[field_flat] = currentValue - 1;
+      $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
     }
   };
 
@@ -3896,18 +4355,20 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
 
   $scope.prependToField = function($event, field, field_flat)
   {
-    var map_config = $scope[$scope.config.workspace.map_config];
-    var map_config_flat = $scope[$scope.config.workspace.map_config_flat];
-    var currentValue = extract(field.split("."), map_config);
-    if(Array.isArray(currentValue))
+    var workspace = $scope[$scope.config.workspace.workspace];
+    var workspace_flat = $scope[$scope.config.workspace.workspace_flat];
+    var currentValue = extract(field.split("."), workspace);
+    var fieldType = extract(field.split("."), $scope[$scope.config.schema.schema]).type;
+    if(fieldType == "stringarray" || fieldType == "textarray" || fieldType == "objectarray")
     {
       var valueToAdd = $("#editor-field-"+field_flat).val();
       if(angular.isString(valueToAdd) && valueToAdd != "")
       {
-        var newValue = [valueToAdd].concat(currentValue);
-        map_config[field] = newValue;
+        var newValue = angular.isDefined(currentValue) ? [valueToAdd].concat(currentValue) : [valueToAdd];
+        //workspace[field] = newValue;
+        $scope.setValue(field_flat, newValue, workspace);  // field, value, target
         $.each(geodash.api.flatten(newValue), function(i, x){
-          map_config_flat[field_flat+"__"+i] = x;
+          workspace_flat[field_flat+"__"+i] = x;
         });
       }
     }
@@ -3916,11 +4377,8 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
       var valueToAdd = $("#editor-field-"+field_flat).val();
       if(angular.isString(valueToAdd) && valueToAdd != "")
       {
-        map_config_flat[field_flat] = valueToAdd + "," + currentValue;
-        $scope.updateValue(
-          field_flat,
-          $scope[$scope.config.workspace.map_config_flat],
-          $scope[$scope.config.workspace.map_config]);
+        workspace_flat[field_flat] = valueToAdd + "," + currentValue;
+        $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
       }
     }
 
@@ -3933,33 +4391,29 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
 
   $scope.subtractFromField = function($event, field, field_flat, $index)
   {
-    var map_config = $scope[$scope.config.workspace.map_config];
-    var map_config_flat = $scope[$scope.config.workspace.map_config_flat];
-    var currentValue = extract(field.split("."), map_config);
-    if(Array.isArray(currentValue))
+    var workspace = $scope[$scope.config.workspace.workspace];
+    var workspace_flat = $scope[$scope.config.workspace.workspace_flat];
+    var currentValue = extract(field.split("."), workspace);
+    var fieldType = extract(field.split("."), $scope[$scope.config.schema.schema]).type;
+    if(fieldType == "stringarray" || fieldType == "textarray" || fieldType == "objectarray")
     {
       currentValue.splice($index, 1);
-      map_config[field] = currentValue;
+      //workspace[field] = currentValue;
+      $scope.setValue(field_flat, currentValue, workspace);  // field, value, target
       $.each(geodash.api.flatten(currentValue), function(i, x){
-        map_config_flat[field_flat+"__"+i] = x;
+        workspace_flat[field_flat+"__"+i] = x;
       });
-      delete map_config_flat[field_flat+"__"+(currentValue.length)];
+      delete workspace_flat[field_flat+"__"+(currentValue.length)];
     }
     else if(angular.isString(currentValue))
     {
-      map_config_flat[field_flat] = currentValue.substring(0, $index) + currentValue.substring($index + 1);
-      $scope.updateValue(
-        field_flat,
-        $scope[$scope.config.workspace.map_config_flat],
-        $scope[$scope.config.workspace.map_config]);
+      workspace_flat[field_flat] = currentValue.substring(0, $index) + currentValue.substring($index + 1);
+      $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
     }
     else if(angular.isNumber(currentValue))
     {
-      map_config_flat[field_flat] = currentValue - $("#editor-field-"+field_flat).val();
-      $scope.updateValue(
-        field_flat,
-        $scope[$scope.config.workspace.map_config_flat],
-        $scope[$scope.config.workspace.map_config]);
+      workspace_flat[field_flat] = currentValue - $("#editor-field-"+field_flat).val();
+      $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
     }
     $("#editor-field-"+field_flat).val(null);
     try{
@@ -3980,8 +4434,12 @@ geodash.controllers["controller_modal_edit_object"] = ['$scope', function($scope
       "id": "geodash-modal-edit-object"
     },
     "workspace": {
-      "map_config": "modaleditobject_workspace",
-      "map_config_flat": "modaleditobject_workspace_flat"
+      "workspace": "modaleditobject_workspace", // Variable name to temporarily store value
+      "workspace_flat": "modaleditobject_workspace_flat"  // Variable name to temporarily store value
+    },
+    "schema": {
+      "schema": "modaleditobject_schema",  // Variable name to temporarily store value
+      "schema_flat": "modaleditobject_schema_flat"  // Variable name to temporarily store value
     },
     "save": {
       "target": "geodash-modal-edit-field",
@@ -4093,232 +4551,34 @@ geodash.controllers["controller_main"] = function(
     $scope.live = live;
 
     $scope.refreshMap = function(state){
-
-
       // Refresh all child controllers
       $scope.$broadcast("refreshMap", {'state': state});
     };
 
+    $scope.processEvent = function(event, args)
+    {
+      var c = $.grep(geodash.meta.controllers, function(x, i){
+        return x['name'] == 'controller_main';
+      })[0];
+
+      for(var i = 0; i < c.handlers.length; i++)
+      {
+        if(c.handlers[i]['event'] == event.name)
+        {
+          geodash.handlers[c.handlers[i]['handler']]($scope, $interpolate, $http, $q,  event, args);
+        }
+      }
+    };
+
     $.each(geodash.listeners, function(i, x){ $scope.$on(i, x); });
 
-    // Calendar, Country, Hazard, or Filter Changed
-    $scope.$on("stateChanged", function(event, args) {
-        console.log('event', event);
-        console.log('args', args);
-        //
-        var $scope = geodash.api.getScope("geodash-main");
-        $scope.$apply(function () {
-            $scope.state = $.extend($scope.state, args);
-            var url = buildPageURL($interpolate, map_config, $scope.state);
-            if(url != undefined)
-            {
-              history.replaceState(state, "", url);
-            }
-            $scope.refreshMap($scope.state);
-        });
-    });
-
-    // Filter Changed
-    $scope.$on("filterChanged", function(event, args) {
-        console.log('event', event);
-        console.log('args', args);
-        //
-        var $scope = geodash.api.getScope("geodash-main");
-        $scope.$apply(function () {
-            $scope.state.filters[args["layer"]] = $.extend(
-              $scope.state.filters[args["layer"]],
-              args["filter"]);
-            var url = buildPageURL($interpolate, map_config, $scope.state);
-            if(url != undefined)
-            {
-              history.replaceState(state, "", url);
-            }
-            $scope.refreshMap($scope.state);
-        });
-    });
-
-    // Style Changed
-    $scope.$on("selectStyle", function(event, args) {
-        console.log('event', event);
-        console.log('args', args);
-        //
-        var $scope = geodash.api.getScope("geodash-main");
-        $scope.$apply(function () {
-            $scope.state.styles[args["layer"]] = args["style"];
-            var url = buildPageURL($interpolate, map_config, $scope.state);
-            if(url != undefined)
-            {
-              history.replaceState(state, "", url);
-            }
-            $scope.refreshMap($scope.state);
-        });
-    });
-
-    // Map Panned or Zoomed
-    $scope.$on("viewChanged", function(event, args) {
-        console.log('event', event);
-        console.log('args', args);
-        //
-        var $scope = geodash.api.getScope("geodash-main");
-        $scope.state.view = $.extend($scope.state.view, args);
-        var url = buildPageURL($interpolate, map_config, $scope.state);
-        if(url != undefined)
-        {
-          history.replaceState(state, "", url);
-        }
-        // $scope.$on already wraps $scope.$apply
-        /*$scope.$apply(function () {
-            $scope.state.view = $.extend($scope.state.view, args);
-            var url = buildPageURL("countryhazardmonth_detail", state);
-            history.replaceState(state, "", url);
-        });*/
-    });
-
-    $scope.$on("layerLoaded", function(event, args) {
-        var $scope = geodash.api.getScope("geodash-main");
-        var type = args.type;
-        var layer = args.layer;
-        var visible = args.visible != undefined ? args.visible : true;
-        if(type == "featurelayer")
-        {
-          if(visible)
-          {
-            $scope.state.view.featurelayers.push(layer);
-          }
-        }
-        else if(type == "baselayer")
-        {
-          $scope.state.view.baselayer = layer;
-        }
-    });
-
-    $scope.$on("showLayer", function(event, args) {
-        console.log('event', event);
-        console.log('args', args);
-        var $scope = geodash.api.getScope("geodash-main");
-        var layer = args.layer;
-        if($.inArray(layer, $scope.state.view.featurelayers) == -1)
-        {
-          $scope.state.view.featurelayers.push(layer);
-          $scope.refreshMap($scope.state);
-        }
-    });
-    $scope.$on("hideLayer", function(event, args) {
-        console.log('event', event);
-        console.log('args', args);
-        var $scope = geodash.api.getScope("geodash-main");
-        var layer = args.layer;
-        var i = $.inArray(layer, $scope.state.view.featurelayers);
-        if(i != -1)
-        {
-          $scope.state.view.featurelayers.splice(i, 1);
-          $scope.refreshMap($scope.state);
-        }
-    });
-    $scope.$on("showLayers", function(event, args) {
-        console.log('event', event);
-        console.log('args', args);
-        var $scope = geodash.api.getScope("geodash-main");
-        var layers = args.layers;
-        for(var i = 0; i < layers.length; i++)
-        {
-          var layer = layers[i];
-          if($.inArray(layer, $scope.state.view.featurelayers) == -1)
-          {
-            $scope.state.view.featurelayers.push(layer);
-            $scope.refreshMap($scope.state);
-          }
-        }
-    });
-    $scope.$on("hideLayers", function(event, args) {
-        console.log('event', event);
-        console.log('args', args);
-        var $scope = geodash.api.getScope("geodash-main");
-        var layers = args.layers;
-        for(var i = 0; i < layers.length; i++)
-        {
-          var layer = args.layers[i];
-          var j = $.inArray(layer, $scope.state.view.featurelayers);
-          if(j != -1)
-          {
-            $scope.state.view.featurelayers.splice(j, 1);
-            $scope.refreshMap($scope.state);
-          }
-        }
-    });
-    $scope.$on("switchBaseLayer", function(event, args) {
-        console.log('event', event);
-        console.log('args', args);
-        var $scope = geodash.api.getScope("geodash-main");
-        $scope.state.view.baselayer = args.layer;
-        $scope.refreshMap($scope.state);
-    });
-
-    $scope.$on("zoomToLayer", function(event, args) {
-        var $scope = geodash.api.getScope("geodash-main");
-        var layer = args.layer;
-        var i = $.inArray(layer, $scope.state.view.featurelayers);
-        if(i != -1)
-        {
-          $scope.$broadcast("changeView", {'layer': layer});
-        }
-    });
-
-    $scope.$on("clickedOnMap", function(event, args) {
-        console.log('event', event);
-        console.log('args', args);
-        //
-        var $scope = geodash.api.getScope("geodash-main");
-        var z = $scope.state.view.z;
-        var visibleFeatureLayers = $scope.state.view.featurelayers;
-        console.log("visibleFeatureLayers", visibleFeatureLayers);
-        var featurelayers_by_featuretype = {};
-        var fields_by_featuretype = {};
-        var urls = [];
-        for(var i = 0; i < visibleFeatureLayers.length; i++)
-        {
-            var fl = geodash.api.getFeatureLayer(visibleFeatureLayers[i], {"scope": $scope});
-            if("wfs" in fl && fl.wfs != undefined)
-            {
-              var params = {
-                service: "wfs",
-                version: fl.wfs.version,
-                request: "GetFeature",
-                srsName: "EPSG:4326",
-              };
-
-              var targetLocation = new L.LatLng(args.lat, args.lon);
-              var bbox = geodash.tilemath.point_to_bbox(args.lon, args.lat, z, 4).join(",");
-              var typeNames = fl.wfs.layers || fl.wms.layers || [] ;
-              for(var j = 0; j < typeNames.length; j++)
-              {
-                typeName = typeNames[j];
-                var url = fl.wfs.url + "?" + $.param($.extend(params, {typeNames: typeName, bbox: bbox}));
-                urls.push(url);
-                fields_by_featuretype[typeName.toLowerCase()] = geodash.layers.aggregate_fields(fl);
-                featurelayers_by_featuretype[typeName.toLowerCase()] = fl;
-              }
-            }
-          }
-
-          $q.all(geodash.http.build_promises($http, urls)).then(function(responses){
-              var features = geodash.http.build_features(responses, fields_by_featuretype);
-              console.log("Features: ", features);
-              if(features.length > 0 )
-              {
-                var featureAndLocation = geodash.vecmath.getClosestFeatureAndLocation(features, targetLocation);
-                var fl = featurelayers_by_featuretype[featureAndLocation.feature.featuretype];
-                $scope.$broadcast("openPopup", {
-                  'featureLayer': fl,
-                  'feature': featureAndLocation.feature,
-                  'location': {
-                    'lon': featureAndLocation.location.lng,
-                    'lat': featureAndLocation.location.lat
-                  }
-                });
-              }
-          });
-    });
+    var c = $.grep(geodash.meta.controllers, function(x, i){
+      return x['name'] == 'controller_main';
+    })[0];
+    for(var i = 0; i < c.handlers.length; i++)
+    {
+      $scope.$on(c.handlers[i]['event'], $scope.processEvent);
+    }
 };
 
 
@@ -4330,6 +4590,7 @@ var init_geodashserver_controller_main = function(that, app)
     ".geodash-controller.geodash-about",
     ".geodash-controller.geodash-download",
     ".geodash-controller.geodash-dashboard-config",
+    ".geodash-controller.geodash-dashboard-security",
     "[geodash-controller='geodash-modal']",
     "[geodash-controller='geodash-base']"
   ].join(", ");

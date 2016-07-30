@@ -1,0 +1,38 @@
+<div class="modal-dialog geodash-responsive" role="document">
+  <div class="modal-content">
+    <div class="modal-header">
+      <button geodash-btn-close></button>
+      <h4 class="modal-title" id="myModalLabel">Security / {{ workspace.config.title }}</h4>
+    </div>
+    <div class="modal-body">
+      <div>
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" role="tablist">
+          <li label="YAML" target="#modal-dashboard-security-yaml" geodash-tab></li>
+          <li label="JSON" target="#modal-dashboard-security-json" geodash-tab></li>
+        </ul>
+        <div class="tab-content">
+          <div
+            id="modal-dashboard-security-yaml"
+            class="tab-pane fade"
+            role="tabpanel"
+            style="padding: 10px;">
+            <h3>Security as YAML</h3>
+            <pre style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | yaml : 8 }}</pre>
+          </div>
+          <div
+            id="modal-dashboard-security-json"
+            class="tab-pane fade"
+            role="tabpanel"
+            style="padding: 10px;">
+            <h3>Security as JSON</h3>
+            <pre style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | json }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+    </div>
+  </div>
+</div>

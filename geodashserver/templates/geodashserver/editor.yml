@@ -7,25 +7,24 @@ panes:
       - config.slug
       - config.description
       - config.pages
+      - config.welcome.title
+      - config.welcome.intro
+      - config.welcome.about
   - id: editor_security
     label: Security
     fields:
       - security.advertised
       - security.published
+      - security.view_geodashdashboard
+      - security.change_geodashdashboard
+      - security.delete_geodashdashboard
   - id: editor_about
     label: About
     fields:
       - config.about.title
-  - id: editor_welcome
-    label: Welcome
-    fields:
-      - config.welcome.title
-      - config.welcome.intro
-      - config.welcome.about
   - id: editor_view
     label: View
     fields:
-      - config.renderlayers
       - config.view.latitude
       - config.view.longitude
       - config.view.zoom
@@ -44,13 +43,11 @@ panes:
     label: Static Overlays
     fields:
       - config.overlays
-  - id: editor_featurelayers
-    label: Feature Layers
+  - id: editor_layers
+    label: Layers
     fields:
+      - config.renderlayers
       - config.featurelayers
-  - id: editor_baselayers
-    label: Base Layers
-    fields:
       - config.view.baselayer
       - config.baselayers
   - id: legend

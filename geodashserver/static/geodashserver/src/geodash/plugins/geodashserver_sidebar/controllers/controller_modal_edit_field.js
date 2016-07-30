@@ -8,8 +8,12 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
       "id": "geodash-modal-edit-field"
     },
     "workspace": {
-      "workspace": "modaleditfield_workspace",
-      "workspace_flat": "modaleditfield_workspace_flat"
+      "workspace": "modaleditfield_workspace", // Variable name to temporarily store value
+      "workspace_flat": "modaleditfield_workspace_flat"  // Variable name to temporarily store value
+    },
+    "schema": {
+      "schema": "modaleditfield_schema",  // Variable name to temporarily store value
+      "schema_flat": "modaleditfield_schema_flat"  // Variable name to temporarily store value
     },
     "edit": {
       "target": "geodash-modal-edit-object",
@@ -25,6 +29,7 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
   //////////////////////////////////
   $scope.html5data = geodashserver.html5data;
   $scope.updateValue = geodash.api.updateValue;
+  $scope.setValue = geodash.api.setValue;
   $scope.value_edit_field = null;
   //////////////////////////////////
   $scope.showOptions = geodash.ui.showOptions;
@@ -38,8 +43,8 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
 
     $scope.updateValue(
       field_flat,
-      $scope[$scope.config.workspace.map_config_flat],
-      $scope[$scope.config.workspace.map_config]);
+      $scope[$scope.config.workspace.workspace_flat],
+      $scope[$scope.config.workspace.workspace]);
   };
 
   $scope.updateValues = function(field_flat_array)
@@ -52,10 +57,11 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
 
   $scope.up = function($event, field, field_flat, $index)
   {
-    var map_config = $scope[$scope.config.workspace.map_config];
-    var map_config_flat = $scope[$scope.config.workspace.map_config_flat];
-    var currentValue = extract(field.split("."), map_config);
-    if(Array.isArray(currentValue))
+    var workspace = $scope[$scope.config.workspace.workspace];
+    var workspace_flat = $scope[$scope.config.workspace.workspace_flat];
+    var currentValue = extract(field.split("."), workspace);
+    var fieldType = extract(field.split("."), $scope[$scope.config.schema.schema]).type;
+    if(fieldType == "stringarray" || fieldType == "textarray" || fieldType == "objectarray")
     {
       if($index > 0)
       {
@@ -64,29 +70,24 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
           currentValue[$index],
           currentValue[$index - 1],
           currentValue.slice($index + 1));
-        map_config[field] = newValue;
-
+        $scope.setValue(field_flat, currentValue, workspace);  // field, value, target
         $.each(geodash.api.flatten(newValue), function(i, x){
-          map_config_flat[field_flat+"__"+i] = x;
+          workspace_flat[field_flat+"__"+i] = x;
         });
       }
     }
     else if(angular.isNumber(currentValue))
     {
-      map_config[field_flat] = currentValue + 1;
-
-      $scope.updateValue(
-        field_flat,
-        $scope[$scope.config.workspace.map_config_flat],
-        $scope[$scope.config.workspace.map_config]);
+      workspace_flat[field_flat] = currentValue + 1;
+      $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
     }
   };
 
   $scope.down = function($event, field, field_flat, $index)
   {
-    var map_config = $scope[$scope.config.workspace.map_config];
-    var map_config_flat = $scope[$scope.config.workspace.map_config_flat];
-    var currentValue = extract(field.split("."), map_config);
+    var workspace = $scope[$scope.config.workspace.workspace];
+    var workspace_flat = $scope[$scope.config.workspace.workspace_flat];
+    var currentValue = extract(field.split("."), workspace);
     if(Array.isArray(currentValue))
     {
       if($index < currentValue.length - 1)
@@ -96,20 +97,16 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
           currentValue[$index + 1],
           currentValue[$index],
           currentValue.slice($index + 2));
-        map_config[field] = newValue;
+        $scope.setValue(field_flat, currentValue, workspace);  // field, value, target
         $.each(geodash.api.flatten(newValue), function(i, x){
-          map_config_flat[field_flat+"__"+i] = x;
+          workspace_flat[field_flat+"__"+i] = x;
         });
       }
     }
     else if(angular.isNumber(currentValue))
     {
-      map_config_flat[field_flat] = currentValue - 1;
-
-      $scope.updateValue(
-        field_flat,
-        $scope[$scope.config.workspace.map_config_flat],
-        $scope[$scope.config.workspace.map_config]);
+      workspace_flat[field_flat] = currentValue - 1;
+      $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
     }
   };
 
@@ -125,18 +122,20 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
 
   $scope.prependToField = function($event, field, field_flat)
   {
-    var map_config = $scope[$scope.config.workspace.map_config];
-    var map_config_flat = $scope[$scope.config.workspace.map_config_flat];
-    var currentValue = extract(field.split("."), map_config);
-    if(Array.isArray(currentValue))
+    var workspace = $scope[$scope.config.workspace.workspace];
+    var workspace_flat = $scope[$scope.config.workspace.workspace_flat];
+    var currentValue = extract(field.split("."), workspace);
+    var fieldType = extract(field.split("."), $scope[$scope.config.schema.schema]).type;
+    if(fieldType == "stringarray" || fieldType == "textarray" || fieldType == "objectarray")
     {
       var valueToAdd = $("#editor-field-"+field_flat).val();
       if(angular.isString(valueToAdd) && valueToAdd != "")
       {
-        var newValue = [valueToAdd].concat(currentValue);
-        map_config[field] = newValue;
+        var newValue = angular.isDefined(currentValue) ? [valueToAdd].concat(currentValue) : [valueToAdd];
+        //workspace[field] = newValue;
+        $scope.setValue(field_flat, newValue, workspace);  // field, value, target
         $.each(geodash.api.flatten(newValue), function(i, x){
-          map_config_flat[field_flat+"__"+i] = x;
+          workspace_flat[field_flat+"__"+i] = x;
         });
       }
     }
@@ -145,11 +144,8 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
       var valueToAdd = $("#editor-field-"+field_flat).val();
       if(angular.isString(valueToAdd) && valueToAdd != "")
       {
-        map_config_flat[field_flat] = valueToAdd + "," + currentValue;
-        $scope.updateValue(
-          field_flat,
-          $scope[$scope.config.workspace.map_config_flat],
-          $scope[$scope.config.workspace.map_config]);
+        workspace_flat[field_flat] = valueToAdd + "," + currentValue;
+        $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
       }
     }
 
@@ -162,33 +158,29 @@ geodash.controllers["controller_modal_edit_field"] = ['$scope', function($scope)
 
   $scope.subtractFromField = function($event, field, field_flat, $index)
   {
-    var map_config = $scope[$scope.config.workspace.map_config];
-    var map_config_flat = $scope[$scope.config.workspace.map_config_flat];
-    var currentValue = extract(field.split("."), map_config);
-    if(Array.isArray(currentValue))
+    var workspace = $scope[$scope.config.workspace.workspace];
+    var workspace_flat = $scope[$scope.config.workspace.workspace_flat];
+    var currentValue = extract(field.split("."), workspace);
+    var fieldType = extract(field.split("."), $scope[$scope.config.schema.schema]).type;
+    if(fieldType == "stringarray" || fieldType == "textarray" || fieldType == "objectarray")
     {
       currentValue.splice($index, 1);
-      map_config[field] = currentValue;
+      //workspace[field] = currentValue;
+      $scope.setValue(field_flat, currentValue, workspace);  // field, value, target
       $.each(geodash.api.flatten(currentValue), function(i, x){
-        map_config_flat[field_flat+"__"+i] = x;
+        workspace_flat[field_flat+"__"+i] = x;
       });
-      delete map_config_flat[field_flat+"__"+(currentValue.length)];
+      delete workspace_flat[field_flat+"__"+(currentValue.length)];
     }
     else if(angular.isString(currentValue))
     {
-      map_config_flat[field_flat] = currentValue.substring(0, $index) + currentValue.substring($index + 1);
-      $scope.updateValue(
-        field_flat,
-        $scope[$scope.config.workspace.map_config_flat],
-        $scope[$scope.config.workspace.map_config]);
+      workspace_flat[field_flat] = currentValue.substring(0, $index) + currentValue.substring($index + 1);
+      $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
     }
     else if(angular.isNumber(currentValue))
     {
-      map_config_flat[field_flat] = currentValue - $("#editor-field-"+field_flat).val();
-      $scope.updateValue(
-        field_flat,
-        $scope[$scope.config.workspace.map_config_flat],
-        $scope[$scope.config.workspace.map_config]);
+      workspace_flat[field_flat] = currentValue - $("#editor-field-"+field_flat).val();
+      $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
     }
     $("#editor-field-"+field_flat).val(null);
     try{

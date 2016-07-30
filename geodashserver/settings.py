@@ -201,6 +201,7 @@ GEODASH_STATIC_DEBUG = {
     "bootstrap": False,
     "jquery": False,
     "leaflet": True,
-    'monolith' False
+    "select2": True,
+    'monolith': True
 }
 #######################################

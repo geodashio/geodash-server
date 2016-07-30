@@ -7,10 +7,12 @@ directives:
   - geodashDashboardEditor.js
   - geodashModalEditField.js
   - geodashModalEditObject.js
+  - geodashModalDashboardSecurity.js
 templates:
   - dashboard_editor.tpl.html
   - modal_edit_field.tpl.html
   - modal_edit_object.tpl.html
+  - geodash_modal_dashboard_security.tpl.html
 less:
   - sidebar.less
   - sidebar-toggle.less

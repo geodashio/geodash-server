@@ -44,9 +44,9 @@ geodashserver.html5data = function()
           "field_flat": field_flat
         }
         data["dynamic"] = {
-          "value_edit_field": ["source", "map_config", field],
-          "map_config_schema": ["source", "map_config_schema"],
-          "map_config_schema_flat": ["source", "map_config_schema_flat"]
+          "value_edit_field": ["source", "workspace", "config", field]
+          //"schema": ["source", "schema"],
+          //"schema_flat": ["source", "schema_flat"]
         };
       }
       else if(id_show == "geodash-modal-edit-object")
@@ -59,9 +59,9 @@ geodashserver.html5data = function()
         data["dynamic"] = {
           "modaleditobject_workspace": ["source", "modaleditfield_workspace"],
           "modaleditobject_workspace_flat": ["source", "modaleditfield_workspace_flat"],
-          "object_schema": ["source", "map_config_schema", field, "schema"],
-          "map_config_schema": ["source", "map_config_schema"],
-          "map_config_schema_flat": ["source", "map_config_schema_flat"]
+          "modaleditobject_schema": ["source", "modaleditfield_schema"],
+          "modaleditobject_schema_flat": ["source", "modaleditfield_schema_flat"],
+          "object_schema": ["source", "schema", field, "schema"]
         };
         if(angular.isNumber(objectIndex))
         {
@@ -91,11 +91,11 @@ geodashserver.html5data = function()
           "field_flat":field_flat
         },
         "dynamic": {
-          "value_edit_field": ["source", "map_config", field],
-          "modaleditfield_workspace": ["source", "map_config"],
-          "modaleditfield_workspace_flat": ["source", "map_config_flat"],
-          "map_config_schema": ["source", "map_config_schema"],
-          "map_config_schema_flat": ["source", "map_config_schema_flat"]
+          "value_edit_field": ["source", "workspace", field],
+          "modaleditfield_workspace": ["source", "workspace"],
+          "modaleditfield_workspace_flat": ["source", "workspace_flat"],
+          "modaleditfield_schema": ["source", "schema"],
+          "modaleditfield_schema_flat": ["source", "schema_flat"]
         }
       };
     }
@@ -107,8 +107,8 @@ geodashserver.html5data = function()
       return {
         "id": id,
         "dynamic": {
-          "object": ["source", "map_config_flat", field_flat, index],
-          "object_schema": ["source", "map_config_schema", field, "schema"]
+          "object": ["source", "workspace_flat", field_flat, index],
+          "object_schema": ["source", "schema", field, "schema"]
         }
       };
     }

@@ -16,15 +16,26 @@
         "security_schema": {{ security_schema_json|safe }},
         "state_schema": {{ state_schema_json|safe }},
         "dashboards_typeahead": {{ GEODASH_DASHBOARDS_TYPEAHEAD|safe }},
-        "security": {{ security_json|safe }}
+        "security": {{ security_json|safe }},
+        "users": {{ users | safe }}
       }
     }
 </script>
 {% endblock %}
 
+{% block modals %}
+{{ block.super }}
+{% include "geodashserver/_includes/security.html" %}
+{% endblock %}
+
 {% block map_controllers %}
-{% if user.is_authenticated %}
-{% include "geodash/_includes/map_sidebar_toggle_right.html" %}
+{% if include_sidebar_right %}
+<div
+  id="geodash-map-sidebar-toggle-right"
+  class="geodash-controller"
+  selector="#geodash-map-sidebar-toggle-right, #geodash-sidebar-right, #geodash-map"
+  geodash-sidebar-toggle-right>
+</div>
 {% endif %}
 {% include "geodash/_includes/map_overlays.html" %}
 {% if map_config.controls.legend %}

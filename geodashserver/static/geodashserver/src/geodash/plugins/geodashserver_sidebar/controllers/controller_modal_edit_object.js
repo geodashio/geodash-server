@@ -8,8 +8,12 @@ geodash.controllers["controller_modal_edit_object"] = ['$scope', function($scope
       "id": "geodash-modal-edit-object"
     },
     "workspace": {
-      "map_config": "modaleditobject_workspace",
-      "map_config_flat": "modaleditobject_workspace_flat"
+      "workspace": "modaleditobject_workspace", // Variable name to temporarily store value
+      "workspace_flat": "modaleditobject_workspace_flat"  // Variable name to temporarily store value
+    },
+    "schema": {
+      "schema": "modaleditobject_schema",  // Variable name to temporarily store value
+      "schema_flat": "modaleditobject_schema_flat"  // Variable name to temporarily store value
     },
     "save": {
       "target": "geodash-modal-edit-field",

@@ -94,14 +94,16 @@ build:
   polyfill.js:
     name: polyfill.js
     type: js
+    uglify: true # Create an unglified version at *.min.js
     src: "./src/js/polyfill/*.js"
     outfile: polyfill.js
     dest:  ./build/js/
   main.js:
     name: main.js
     type: js
+    uglify: true # Create an unglified version at *.min.js
     src:
-      - type: var
+      - type: variable
         name: compile_js  # GeoDash will concat array variables
     outfile: geodashserver.js
     dest: ./build/js/
@@ -132,7 +134,8 @@ build:
         name: select2.full.js
       - type: resource
         project: geodash
-        name: typeahead.custom.js
+        version: custom
+        name: typeahead.js
       - type: resource
         project: geodash
         version: "1.4.0-beta.4"

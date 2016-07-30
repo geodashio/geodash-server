@@ -31,8 +31,32 @@ var init_map = function(opts)
   return map;
 };
 geodash.controllers["controller_map_map"] = function(
-  $rootScope, $scope, $element, $compile, $interpolate, $templateCache,
+  $rootScope, $scope, $element, $http, $q,
+  $compile, $interpolate, $templateCache,
   state, map_config, live) {
+  //////////////////////////////////////
+  $scope.processEvent = function(event, args)
+  {
+    var c = $.grep(geodash.meta.controllers, function(x, i){
+      return x['name'] == 'controller_map_map';
+    })[0];
+
+    for(var i = 0; i < c.handlers.length; i++)
+    {
+      if(c.handlers[i]['event'] == event.name)
+      {
+        geodash.handlers[c.handlers[i]['handler']]($scope, $interpolate, $http, $q, event, args);
+      }
+    }
+  };
+
+  var c = $.grep(geodash.meta.controllers, function(x, i){
+    return x['name'] == 'controller_map_map';
+  })[0];
+  for(var i = 0; i < c.handlers.length; i++)
+  {
+    $scope.$on(c.handlers[i]['event'], $scope.processEvent);
+  }
   //////////////////////////////////////
   var listeners =
   {
@@ -105,7 +129,7 @@ geodash.controllers["controller_map_map"] = function(
   }
   //////////////////////////////////////
   // Sidebar Toggle
-  $("#geodash-map-sidebar-toggle-right").click(function (){
+  /*$("#geodash-map-sidebar-toggle-right").click(function (){
     $(this).toggleClass("sidebar-open sidebar-right-open");
     $("#geodash-sidebar-right, #geodash-map").toggleClass("sidebar-open sidebar-right-open");
     setTimeout(function(){
@@ -114,7 +138,21 @@ geodash.controllers["controller_map_map"] = function(
         pan: false
       });
     },2000);
-  });
+  });*/
+  /*$scope.on$('toggleComponent', function (event, args){
+    console.log("Event: ", event);
+    console.log("Args: ", args);
+    var component = args.component;
+    var position = args.position;
+    var classes = component+"-open "+component+"-"+position+"-open";
+    $(args.selector).toggleClass(classes);
+    setTimeout(function(){
+      live["map"].invalidateSize({
+        animate: true,
+        pan: false
+      });
+    },2000);
+  });*/
   //////////////////////////////////////
   $scope.$on("refreshMap", function(event, args) {
     // Forces Refresh

@@ -16,6 +16,13 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
           //"map_config_schema": ["source", "schema", "config"],
           //"map_config_schema_flat": ["source", "schema_flat", "config"]
         }
+      },
+      "modal_dashboard_security": {
+        "id": "geodash-modal-dashboard-security",
+        "dynamic": {
+          "workspace": ["source", "workspace"],
+          "workspace_flat": ["source", "workspace_flat"]
+        }
       }
     }
   };
@@ -174,12 +181,16 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
             'X-CSRFToken': $cookies['csrftoken']
           }
       };
-      $http.post('/api/dashboard/'+slug+'/config/save', $scope.workspace.config, httpConfig).success(function(data)
+      var payload = {
+        'config': $scope.workspace.config,
+        'security': $scope.workspace.security
+      };
+      $http.post('/api/dashboard/'+slug+'/config/save', payload, httpConfig).success(function(data)
       {
         console.log(data);
         if(data.success)
         {
-          if(data.map_config.slug != slug)
+          if(data.config.slug != slug)
           {
             window.location.href = '/dashboard/'+data.config.slug;
           }
@@ -213,7 +224,11 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
             'X-CSRFToken': $cookies['csrftoken']
           }
       };
-      $http.post('/api/dashboard/config/new', $scope.workspace.config, httpConfig).success(function(data)
+      var payload = {
+        'config': $scope.workspace.config,
+        'security': $scope.workspace.security
+      };
+      $http.post('/api/dashboard/config/new', payload, httpConfig).success(function(data)
       {
         console.log(data);
         if(data.success)
