@@ -1,6 +1,41 @@
-<div class="geodash-dashboard-editor">
-  <h3 style="word-wrap:break-word;text-align:center;">Editor</h3>
-  <hr>
+<div
+  class="geodash-dashboard-editor">
+  <nav class="navbar navbar-default">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <button
+          type="button"
+          class="collapsed navbar-toggle"
+          data-toggle="collapse"
+          data-target="#geodash-editor-navbar-collapse"
+          aria-expanded="false">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <div class="navbar-brand">
+          <p class="navbar-text" style="color:rgb(85,85,85);font-size:30px;">GeoDash Editor</p>
+        </div>
+      </div>
+      <div class="collapse navbar-collapse" id="geodash-editor-navbar-collapse">
+        <form class="navbar-form navbar-right">
+          <button
+            type="button"
+            class="btn btn-success"
+            ng-click="saveConfig()"
+            ng-disabled="'change_geodashdashboard' | inArray : perms | not"
+          >Save</button>
+          <button
+            type="button"
+            class="btn btn-success"
+            ng-click="saveAsConfig()"
+          >Save As ...</button>
+          <button type="button" class="btn btn-default">Reset</button>
+        </form>
+      </div>
+    </div>
+  </nav>
   <form
     class="form-horizontal simple-form"
     style="margin: 10px;"
@@ -56,14 +91,15 @@
                   ng-value="workspace_flat | extract : field_flat"
                   ng-model="workspace_flat[field_flat]"
                   ng-change="validateField(field_flat)">
-                <a
-                  class="geodash-intent input-group-addon btn btn-primary btn-edit"
-                  href="#"
-                  data-intent-name="showModal"
-                  data-intent-data="{{ html5data('showModal', 'geodash-modal-edit-field', field) }}"
-                  data-intent-ctrl="{{ config.that.id }}">
-                  <i class="fa fa-pencil-square-o "></i>
-                </a>
+                <div
+                  ng-if="schema | extract : field : 'source' | ternary_defined: true : false"
+                  class="input-group-addon btn btn-primary btn-show-options"
+                  data-toggle="tooltip"
+                  data-placement="bottom"
+                  title="Show Options."
+                  ng-click="showOptions($event, '#editor-field-' + field_flat)">
+                  <i class="fa fa-chevron-down"></i>
+                </div>
                 <div
                   geodash-btn mode="edit"
                   target="#editor-field-{{ field_flat }}"
@@ -72,7 +108,7 @@
                   class="geodash-intent"
                   data-intent-name="showModal"
                   data-intent-data="{{ html5data('showModal', 'geodash-modal-edit-field', field) }}"
-                  data-intent-ctrl="{{ config.that.id }}">></div>
+                  data-intent-ctrl="{{ config.that.id }}"></div>
                 <div
                   geodash-btn mode="clear"
                   target="#editor-field-{{ field_flat }}"
@@ -80,7 +116,7 @@
                   tooltip-placement="bottom"></div>
               </div>
               <div
-                ng-if="schema | extract : field : 'multiline' | default_if_undefined: 'false' | inArray: [true, 'true', 'yes', 1]"
+                ng-if="schema | extract : field : 'multiline' | default_if_undefined: 'false' | parseTrue"
                 class="input-group">
                 <div geodash-btn-info info="{{ schema | extract : field : 'description' }}"></div>
                 <textarea
@@ -226,7 +262,10 @@
             <div class="col-sm-9">
               <div class="input-group">
                 <div geodash-btn-info info="{{ schema | extract : field : 'description' }}"></div>
-                <div class="form-control" style="height: auto; max-width: 280px;min-height: 28px;max-height: 70px;overflow-y: scroll;">
+                <div
+                  class="form-control"
+                  style="height: auto; max-width: 280px;min-height: 28px;max-height: 70px;overflow-y: scroll;"
+                  disabled>
                   <span
                     ng-repeat="x in workspace| extract : field track by $index"
                     class=""
@@ -234,14 +273,15 @@
                     ng-bind-html="x.title + ' ('+x.id+')'">
                   </span>
                 </div>
-                <a
-                  class="geodash-intent input-group-addon btn btn-primary btn-edit"
-                  href="#"
+                <div
+                  geodash-btn mode="edit"
+                  target="#editor-field-{{ field_flat }}"
+                  info="Edit field"
+                  tooltip-placement="bottom"
+                  class="geodash-intent"
                   data-intent-name="showModal"
                   data-intent-data="{{ html5data('showModal', 'geodash-modal-edit-field', field) }}"
-                  data-intent-ctrl="{{ config.that.id }}">
-                  <i class="fa fa-pencil-square-o "></i>
-                </a>
+                  data-intent-ctrl="{{ config.that.id }}"></div>
                 <div
                   geodash-btn mode="clear"
                   target="#editor-field-{{ field_flat }}"

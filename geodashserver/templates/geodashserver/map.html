@@ -63,7 +63,9 @@
 <script>
   geodash.initial_state = {{ state_json|safe }};
   geodash.state_schema = {{ state_schema_json|safe }};
+  {% if perms_json %}
   geodash.perms = {{ perms_json|safe }};
+  {% endif %}
 </script>
 {% endblock %}
 

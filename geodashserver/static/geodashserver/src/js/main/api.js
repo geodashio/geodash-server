@@ -38,40 +38,39 @@ geodashserver.html5data = function()
       {
         data["clear"] = [
           "objectIndex"
-        ]
+        ];
         data["static"] = {
+          "modal": "geodash-modal-edit-field",
           "field": field,
-          "field_flat": field_flat
-        }
+          "field_flat": field_flat,
+          "path": field,
+          "schemapath": field
+        };
         data["dynamic"] = {
-          "value_edit_field": ["source", "workspace", "config", field]
-          //"schema": ["source", "schema"],
-          //"schema_flat": ["source", "schema_flat"]
+          "value_edit_field": ["source", "workspace", "config", field],
+          "workspace": ["source", "workspace"],
+          "schema": ["source", "schema"]
         };
       }
       else if(id_show == "geodash-modal-edit-object")
       {
         var objectIndex = args[4];
         data["static"] = {
-          "prefix_field": field,
-          "prefix_field_flat": field_flat
-        }
+          "modal": "geodash-modal-edit-object",
+          "prev": id_hide,
+          "basepath": field
+        };
         data["dynamic"] = {
-          "modaleditobject_workspace": ["source", "modaleditfield_workspace"],
-          "modaleditobject_workspace_flat": ["source", "modaleditfield_workspace_flat"],
-          "modaleditobject_schema": ["source", "modaleditfield_schema"],
-          "modaleditobject_schema_flat": ["source", "modaleditfield_schema_flat"],
-          "object_schema": ["source", "schema", field, "schema"]
+          "workspace": ["source", "workspace"],
+          "schema": ["source", "schema"]
         };
         if(angular.isNumber(objectIndex))
         {
           data["static"]["objectIndex"] = objectIndex;
-          data["dynamic"]["object"] = ["source", "modaleditfield_workspace", field, objectIndex];
         }
         else
         {
           data["dynamic"]["objectIndex"] = ["source", "modaleditfield_workspace", field, "length"];
-          data["dynamic"]["object"] = undefined;
         }
       }
     }
@@ -86,16 +85,23 @@ geodashserver.html5data = function()
       var field_flat = field.replace('.', '__');
       return {
         "id": id,
+        "modal": {
+          "backdrop": "static"
+        },
+        "clear": [
+          "objectIndex"
+        ],
         "static": {
-          "field":field,
-          "field_flat":field_flat
+          "modal": "geodash-modal-edit-field",
+          "path": field,
+          "schemapath": field
         },
         "dynamic": {
           "value_edit_field": ["source", "workspace", field],
-          "modaleditfield_workspace": ["source", "workspace"],
-          "modaleditfield_workspace_flat": ["source", "workspace_flat"],
-          "modaleditfield_schema": ["source", "schema"],
-          "modaleditfield_schema_flat": ["source", "schema_flat"]
+          "workspace": ["source", "workspace"],
+          "schema": ["source", "schema"],
+          "featurelayers": ["source", "workspace", "config", "featurelayers"],
+          "baselayers": ["source", "workspace", "config", "baselayers"]
         }
       };
     }
@@ -106,7 +112,12 @@ geodashserver.html5data = function()
       var index = args[3];
       return {
         "id": id,
+        "static": {
+          "modal": "geodash-modal-edit-object"
+        },
         "dynamic": {
+          "workspace": ["source", "workspace"],
+          "schema": ["source", "schema"],
           "object": ["source", "workspace_flat", field_flat, index],
           "object_schema": ["source", "schema", field, "schema"]
         }
@@ -178,6 +189,6 @@ geodashserver.html5data = function()
   }
   else
   {
-      return "";
+    return "";
   }
 };

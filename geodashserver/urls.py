@@ -43,14 +43,14 @@ urlpatterns = [
         name='geodash_map_schema'),
 
     url(
-        r'^dashboard/(?P<slug>[^/]+)/config[.]json$',
-        views.geodash_dashboard_config,
-        name='geodash_dashboard_config'),
-
-    url(
         r'^editor/config[.]json$',
         views.geodash_editor_config,
         name='geodash_editor_config'),
+
+    url(
+        r'^api/dashboard/config/geodash_dashboard_(?P<slug>[^/]+)[.](?P<extension>[^.]+)$',
+        views.geodash_dashboard_config,
+        name='geodash_dashboard_config'),
 
     url(
         r'^api/dashboard/config/new$',

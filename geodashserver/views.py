@@ -161,7 +161,7 @@ def geodash_dashboard(request, slug=None, template="geodashserver/dashboard.html
     return render_to_response(template, RequestContext(request, ctx))
 
 
-def geodash_dashboard_config(request, slug=None):
+def geodash_dashboard_config(request, slug=None, extension="json"):
 
     map_obj = get_object_or_404(GeoDashDashboard, slug=slug)
 
@@ -171,14 +171,18 @@ def geodash_dashboard_config(request, slug=None):
         if not request.user.has_perm("view_geodashdashboard", map_obj):
             raise Http404("Not authorized.")
 
-    map_config_template = "geodashserver/maps/"+map_obj.template
-    map_config_yml = get_template(map_config_template).render({
-      'slug': map_obj.slug,
-      'title': map_obj.title
-    })
-    map_config = yaml.load(map_config_yml)
+    map_config = yaml.load(map_obj.config)
+    map_config["slug"] = map_obj.slug
+    map_config["title"]  = map_obj.title
 
-    return HttpResponse(json.dumps(map_config, default=jdefault), content_type="application/json")
+    ext_lc = extension.lower();
+    if ext_lc == "json":
+        return HttpResponse(json.dumps(map_config, default=jdefault), content_type="application/json")
+    elif ext_lc == "yml" or ext_lc == "yaml":
+        response = yaml.safe_dump(map_config, encoding="utf-8", allow_unicode=True, default_flow_style=False)
+        return HttpResponse(response, content_type="application/json")
+    else:
+        raise Http404("Unknown config format.")
 
 def geodash_dashboard_config_new(request):
 

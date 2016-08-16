@@ -12,9 +12,7 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
         "id": "geodash-modal-dashboard-config",
         "dynamic": {
           "workspace": ["source", "workspace"],
-          "workspace_flat": ["source", "workspace_flat"]//,
-          //"map_config_schema": ["source", "schema", "config"],
-          //"map_config_schema_flat": ["source", "schema_flat", "config"]
+          "workspace_flat": ["source", "workspace_flat"]
         }
       },
       "modal_dashboard_security": {
@@ -84,7 +82,7 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
     {
       $scope.validateField(field_flat_array[i]);
     }
-  }
+  };
   $scope.validateField = function(field_flat)
   {
     // Update map_config
@@ -167,7 +165,7 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
     try{
       $("#editor-field-"+field_flat).typeahead('val', null);
       $("#editor-field-"+field_flat).typeahead('close');
-    }catch(err){};
+    }catch(err){}
   };
 
   $scope.saveConfig = function($event)
@@ -214,7 +212,7 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
     {
       if($scope.workspace.config.slug == slug)
       {
-        alert("Cannot save as.  Need to specify new unique slug.")
+        alert("Cannot save as.  Need to specify new unique slug.");
         return 1;
       }
 
@@ -242,8 +240,4 @@ geodash.controllers["controller_sidebar_geodashserver"] = function(
       });
     }
   };
-
-  setTimeout(function(){
-    $('[data-toggle="tooltip"]', $element).tooltip();
-  },0);
 };

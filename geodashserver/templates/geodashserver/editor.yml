@@ -7,6 +7,7 @@ panes:
       - config.slug
       - config.description
       - config.pages
+      - config.about.title
       - config.welcome.title
       - config.welcome.intro
       - config.welcome.about
@@ -18,10 +19,6 @@ panes:
       - security.view_geodashdashboard
       - security.change_geodashdashboard
       - security.delete_geodashdashboard
-  - id: editor_about
-    label: About
-    fields:
-      - config.about.title
   - id: editor_view
     label: View
     fields:

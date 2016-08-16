@@ -7861,9 +7861,6 @@ span.twitter-typeahead {
 .geodash-map-overlays .geodash-map-grid.on table td {
   border: 2px solid blue;
 }
-.geodash-map-overlays .geodash-map-grid.on table td:hover {
-  background: rgba(0, 0, 128, 0.25);
-}
 .geodash-map-overlays .geodash-map-overlay {
   position: absolute;
   z-index: 9999;
@@ -7871,7 +7868,10 @@ span.twitter-typeahead {
   padding: 10px;
   box-sizing: padding-box;
 }
-.geodash-map-overlays .geodash-map-overlay:hover {
+.geodash-map-overlays.editable .geodash-map-grid.on table td:hover {
+  background: rgba(0, 0, 128, 0.25);
+}
+.geodash-map-overlays.editable .geodash-map-overlay:hover {
   border: 4px solid blue;
   border-radius: 4px;
   cursor: pointer;
@@ -8001,6 +8001,12 @@ span.twitter-typeahead {
 /* Sidebar */
 .geodash-sidebar-editor .geodash-editor-tabs a {
   height: 62px;
+}
+.geodash-dashboard-editor {
+  border-box: box-sizing;
+  border-left: 8px solid #337ab7;
+  height: 100%;
+  overflow-x: hidden;
 }
 
 /* Widely Used Variables */

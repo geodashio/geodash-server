@@ -6,14 +6,10 @@
     </div>
     <div class="modal-body">
       <div>
-        <!-- Nav tabs -->
-        <ul class="nav nav-tabs" role="tablist">
-          <li label="YAML" target="#modal-dashboard-security-yaml" geodash-tab></li>
-          <li label="JSON" target="#modal-dashboard-security-json" geodash-tab></li>
-        </ul>
+        <div geodash-tabs></div>
         <div class="tab-content">
           <div
-            id="modal-dashboard-security-yaml"
+            id="modal-dashboard-security-pane-yaml"
             class="tab-pane fade"
             role="tabpanel"
             style="padding: 10px;">
@@ -21,7 +17,7 @@
             <pre style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | yaml : 8 }}</pre>
           </div>
           <div
-            id="modal-dashboard-security-json"
+            id="modal-dashboard-security-pane-json"
             class="tab-pane fade"
             role="tabpanel"
             style="padding: 10px;">
