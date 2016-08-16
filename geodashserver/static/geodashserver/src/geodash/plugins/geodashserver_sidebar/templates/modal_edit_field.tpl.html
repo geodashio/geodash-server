@@ -32,7 +32,7 @@
                 ng-required="schema | extract : schemapath : 'required'"
                 style="max-width: 100%;"
                 ng-model="value_edit_field"
-                ng-change="validateModalField(path_flat)"></textarea>
+                ng-change="validateModalField()"></textarea>
             </div>
             <div
               ng-if="schema | extract : schemapath : 'type' | inArray: ['textarray', 'stringarray']">
@@ -82,7 +82,7 @@
                   data-toggle="tooltip"
                   data-placement="bottom"
                   title="Prepend to list of layers."
-                  ng-click="prependToField($event, path, path_flat)">
+                  ng-click="prependToField($event)">
                   <i class="fa fa-plus"></i>
                 </div>
                 <div
@@ -124,7 +124,7 @@
                   ng-value="x">
                 <div
                   class="input-group-addon btn btn-danger btn-clear"
-                  ng-click="subtractFromField($event, path, path_flat, $index)">
+                  ng-click="subtractFromField($event, $index)">
                   <i class="fa fa-times"></i>
                 </div>
               </div>
@@ -186,7 +186,7 @@
                 </a>
                 <div
                   class="input-group-addon btn btn-danger btn-clear"
-                  ng-click="subtractFromField($event, path, path_flat, $index)">
+                  ng-click="subtractFromField($event, $index)">
                   <i class="fa fa-times"></i>
                 </div>
               </div>

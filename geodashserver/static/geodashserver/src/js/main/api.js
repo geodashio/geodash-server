@@ -1,18 +1,17 @@
 var geodashserver = {};
 
-geodashserver.welcome = function(options)
+geodashserver.welcome = function()
 {
-  options = options || {};
-  var scope = options['$scope'] || options['scope'] || angular.element("#geodash-main").scope();
+  var scope = geodash.api.getScope("geodash-main");
   var intentData = {
-    "id": "geodashserver-modal-welcome",
+    "id": "geodash-modal-geodashserver-welcome",
     "modal": {
       "backdrop": "static",
       "keyboard": false
     },
     "dynamic": {},
     "static": {
-      "welcome": scope.map_config["welcome"]
+      "welcome": extract("welcome", scope.config || scope.map_config)
     }
   };
   geodash.api.intend("toggleModal", intentData, scope);

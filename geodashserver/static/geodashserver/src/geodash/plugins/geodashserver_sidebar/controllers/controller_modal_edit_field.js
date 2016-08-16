@@ -15,23 +15,26 @@ geodash.controllers["controller_modal_edit_field"] = function($scope, $element, 
   $scope.showOptions = geodash.ui.showOptions;
   /////////////////////////////////
 
-  $scope.validateModalField = function(field_flat)
+  $scope.validateModalField = function()
   {
-    $scope["value_edit_field"] = $("#modal-edit-field-"+field_flat).val();
+    $scope.value_edit_field = $("#modal-edit-field-"+$scope.path_flat).val();
 
-    $scope["modaleditfield_workspace_flat"][field_flat] = $scope["value_edit_field"];
+    $scope.workspace_flat[$scope.path_flat] = $scope.value_edit_field;
 
     $scope.updateValue(
-      field_flat,
-      $scope[$scope.config.workspace.workspace_flat],
-      $scope[$scope.config.workspace.workspace]);
+      $scope.path_flat,
+      $scope.workspace_flat,
+      $scope.workspace);
   };
 
   $scope.updateValues = function(field_flat_array)
   {
     for(var i = 0; i < field_flat_array.length; i++)
     {
-      $scope.updateValue(field_flat_array[i]);
+      $scope.updateValue(
+        field_flat_array[i],
+        $scope.workspace_flat,
+        $scope.workspace);
     }
   };
 
@@ -87,78 +90,74 @@ geodash.controllers["controller_modal_edit_field"] = function($scope, $element, 
     }
   };
 
-  $scope.keyUpOnField = function($event, field, field_flat)
+  $scope.keyUpOnField = function($event)
   {
     if($event.keyCode == 13)
     {
-      $scope.prependToField($event, field, field_flat);
+      $scope.prependToField($event);
     }
   };
 
-  $scope.prependToField = function($event, field, field_flat)
+  $scope.prependToField = function($event)
   {
-    var workspace = $scope[$scope.config.workspace.workspace];
-    var workspace_flat = $scope[$scope.config.workspace.workspace_flat];
-    var currentValue = extract(field.split("."), workspace);
-    var fieldType = extract(field.split("."), $scope[$scope.config.schema.schema]).type;
-    if(fieldType == "stringarray" || fieldType == "textarray" || fieldType == "templatearray" || fieldType == "objectarray")
+    var currentValue = extract($scope.path_array, $scope.workspace);
+    var t = extract(($scope.schemapath_array || $scope.basepath_array), $scope.schema).type;
+    if(t == "stringarray" || t == "textarray" || t == "templatearray" || t == "objectarray")
     {
-      var valueToAdd = $("#editor-field-"+field_flat).val();
+      var valueToAdd = $("#editor-field-"+$scope.path_flat).val();
       if(angular.isString(valueToAdd) && valueToAdd != "")
       {
         var newValue = angular.isDefined(currentValue) ? [valueToAdd].concat(currentValue) : [valueToAdd];
-        $scope.setValue(field_flat, newValue, workspace);  // field, value, target
+        $scope.setValue($scope.path_flat, newValue, $scope.workspace);  // field, value, target
         $.each(geodash.api.flatten(newValue), function(i, x){
-          workspace_flat[field_flat+"__"+i] = x;
+          $scope.workspace_flat[$scope.path_flat+"__"+i] = x;
         });
       }
     }
     else if(angular.isString(currentValue))
     {
-      var valueToAdd = $("#editor-field-"+field_flat).val();
+      var valueToAdd = $("#editor-field-"+$scope.path_flat).val();
       if(angular.isString(valueToAdd) && valueToAdd != "")
       {
-        workspace_flat[field_flat] = valueToAdd + "," + currentValue;
-        $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
+        $scope.workspace_flat[$scope.path_flat] = valueToAdd + "," + currentValue;
+        $scope.setValue($scope.path_flat, $scope.workspace_flat[$scope.path_flat], $scope.workspace);  // field, value, target
       }
     }
 
-    $("#editor-field-"+field_flat).val(null);
+    $("#editor-field-"+$scope.path_flat).val(null);
     try{
-      $("#editor-field-"+field_flat).typeahead('val', null);
-      $("#editor-field-"+field_flat).typeahead('close');
+      $("#editor-field-"+$scope.path_flat).typeahead('val', null);
+      $("#editor-field-"+$scope.path_flat).typeahead('close');
     }catch(err){}
   };
 
-  $scope.subtractFromField = function($event, field, field_flat, $index)
+  $scope.subtractFromField = function($event, $index)
   {
-    var workspace = $scope[$scope.config.workspace.workspace];
-    var workspace_flat = $scope[$scope.config.workspace.workspace_flat];
-    var currentValue = extract(field.split("."), workspace);
-    var fieldType = extract(field.split("."), $scope[$scope.config.schema.schema]).type;
-    if(fieldType == "stringarray" || fieldType == "textarray" || fieldType == "templatearray" || fieldType == "objectarray")
+    var currentValue = extract($scope.path_array, $scope.workspace);
+    var t = extract(($scope.schemapath_array || $scope.basepath_array), $scope.schema).type;
+    if(t == "stringarray" || t == "textarray" || t == "templatearray" || t == "objectarray")
     {
       currentValue.splice($index, 1);
-      $scope.setValue(field_flat, currentValue, workspace);  // field, value, target
+      $scope.setValue($scope.path_flat, currentValue, $scope.workspace);  // field, value, target
       $.each(geodash.api.flatten(currentValue), function(i, x){
-        workspace_flat[field_flat+"__"+i] = x;
+        $scope.workspace_flat[$scope.path_flat+"__"+i] = x;
       });
-      delete workspace_flat[field_flat+"__"+(currentValue.length)];
+      delete $scope.workspace_flat[$scope.path_flat+"__"+(currentValue.length)];
     }
     else if(angular.isString(currentValue))
     {
-      workspace_flat[field_flat] = currentValue.substring(0, $index) + currentValue.substring($index + 1);
-      $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
+      $scope.workspace_flat[$scope.path_flat] = currentValue.substring(0, $index) + currentValue.substring($index + 1);
+      $scope.setValue($scope.path_flat, $scope.workspace_flat[$scope.path_flat], $scope.workspace);  // field, value, target
     }
     else if(angular.isNumber(currentValue))
     {
-      workspace_flat[field_flat] = currentValue - $("#editor-field-"+field_flat).val();
-      $scope.setValue(field_flat, workspace_flat[field_flat], workspace);  // field, value, target
+      $scope.workspace_flat[$scope.path_flat] = currentValue - $("#editor-field-"+$scope.path_flat).val();
+      $scope.setValue($scope.path_flat, $scope.workspace_flat[$scope.path_flat], $scope.workspace);  // field, value, target
     }
-    $("#editor-field-"+field_flat).val(null);
+    $("#editor-field-"+$scope.path_flat).val(null);
     try{
-      $("#editor-field-"+field_flat).typeahead('val', null);
-      $("#editor-field-"+field_flat).typeahead('close');
+      $("#editor-field-"+$scope.path_flat).typeahead('val', null);
+      $("#editor-field-"+$scope.path_flat).typeahead('close');
     }catch(err){}
   };
 

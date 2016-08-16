@@ -1,30 +1,36 @@
-{% extends "geodash/wrapper_text.html" %}
+{% extends "geodashserver/map.html" %}
 
-{% load geodash_tags %}
+{% block title %}GeoDash - Explore{% endblock %}
 
-{% block head_fonts %}
-<link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700,400italic' rel='stylesheet' type='text/css'>
+{% block extra_head %}{{ block.super }}{% endblock %}
+
+{% block init %}{{ block.super }}{% endblock %}
+
+{% block initial_data %}
+<script type="text/javascript" language="Javascript">
+    geodash.initial_data =
+    {
+      "data": {
+        "dashboards_typeahead": {{ GEODASH_DASHBOARDS_TYPEAHEAD|safe }}
+      }
+    }
+</script>
 {% endblock %}
 
-{% block head_bootstrap_css %}
-<link href="{{ STATIC_URL }}geodashserver/build/bootstrap/bootstrap.css" rel="stylesheet"/>
-{% endblock %}
+{% block sidebar_left %}{% endblock %}
+{% block sidebar_right %}{% endblock %}
 
-{% block head_main_css %}
-<link href='{{ STATIC_URL }}geodashserver/build/css/main.css?v={{ GEODASH_SERVER_STATIC_VERSION }}' rel='stylesheet' />
-{% endblock %}
-
-{% block head_main_js %}
+{% block modals %}
 {{ block.super }}
-{% if GEODASH_SERVER_STATIC_DEBUG.main %}
-<script src="{{ STATIC_URL }}geodashserver/build/js/monkeypatch.js?v={{ GEODASH_SERVER_STATIC_VERSION }}"></script>
-<script src="{{ STATIC_URL }}geodashserver/build/js/main.js?v={{ GEODASH_SERVER_STATIC_VERSION }}"></script>
-{% else %}
-<script src="{{ STATIC_URL }}geodashserver/build/js/monkeypatch.min.js?v={{ GEODASH_SERVER_STATIC_VERSION }}"></script>
-<script src="{{ STATIC_URL }}geodashserver/build/js/main.min.js?v={{ GEODASH_SERVER_STATIC_VERSION }}"></script>
-{% endif %}
+<div
+  class="geodash-controller geodash-controller-modal geodash-modal modal fade geodashserver-modal-welcome"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="myModalLabel"
+  geodashserver-modal-welcome>
+</div>
 {% endblock %}
 
-{% block header %}{% include "geodashserver/_includes/header.html" %}{% endblock %}
+{% block extra_content %}{% endblock %}
 
-{% block footer %}{% include "geodashserver/_includes/footer.html" %}{% endblock %}
+{% block footer %}{% endblock %}

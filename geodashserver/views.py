@@ -29,7 +29,7 @@ from geodashserver.utils import build_initial_state, build_state_schema
 SCHEMA_PATH = 'geodashserver/static/geodashserver/build/schema/schema.yml'
 
 
-def home(request, template="geodashserver/explore.html"):
+def home(request, template="geodashserver/home.html"):
     now = datetime.datetime.now()
     current_month = now.month
 

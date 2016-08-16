@@ -20,18 +20,14 @@
 {% block sidebar_left %}{% endblock %}
 {% block sidebar_right %}{% endblock %}
 
-{% block map_controllers %}
-<div class="geodashserver-welcome-modals">
-  <div
-    id="geodashserver-modal-welcome"
-    class="geodash-controller geodash-modal modal fade geodashserver-welcome"
-    tabindex="-1"
-    role="dialog"
-    aria-labelledby="myModalLabel">
-    <div
-      id="geodashserver-welcome"
-      geodashserver-modal-welcome></div>
-  </div>
+{% block modals %}
+{{ block.super }}
+<div
+  class="geodash-controller geodash-controller-modal geodash-modal modal fade geodashserver-modal-welcome"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="myModalLabel"
+  geodashserver-modal-welcome>
 </div>
 {% endblock %}
 

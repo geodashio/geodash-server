@@ -1,34 +1,40 @@
-<div class="modal-dialog geodash-responsive" role="document">
-  <div class="modal-content">
-    <div class="modal-header">
-      <button geodash-btn-close></button>
-      <h4 class="modal-title" id="myModalLabel">Security / {{ workspace.config.title }}</h4>
-    </div>
-    <div class="modal-body">
-      <div>
-        <div geodash-tabs></div>
-        <div class="tab-content">
-          <div
-            id="modal-dashboard-security-pane-yaml"
-            class="tab-pane fade"
-            role="tabpanel"
-            style="padding: 10px;">
-            <h3>Security as YAML</h3>
-            <pre style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | yaml : 8 }}</pre>
-          </div>
-          <div
-            id="modal-dashboard-security-pane-json"
-            class="tab-pane fade"
-            role="tabpanel"
-            style="padding: 10px;">
-            <h3>Security as JSON</h3>
-            <pre style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | json }}</pre>
+<div
+  class="geodash-controller geodash-controller-modal geodash-modal modal fade geodash-dashboard-security"
+  tabindex="-1"
+  role="dialog"
+  aria-labelledby="myModalLabel">
+  <div class="modal-dialog geodash-responsive" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button geodash-btn-close></button>
+        <h4 class="modal-title" id="myModalLabel">Security / {{ workspace.config.title }}</h4>
+      </div>
+      <div class="modal-body">
+        <div>
+          <div geodash-tabs></div>
+          <div class="tab-content">
+            <div
+              id="modal-dashboard-security-pane-yaml"
+              class="tab-pane fade"
+              role="tabpanel"
+              style="padding: 10px;">
+              <h3>Security as YAML</h3>
+              <pre style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | yaml : 8 }}</pre>
+            </div>
+            <div
+              id="modal-dashboard-security-pane-json"
+              class="tab-pane fade"
+              role="tabpanel"
+              style="padding: 10px;">
+              <h3>Security as JSON</h3>
+              <pre style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | json }}</pre>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
