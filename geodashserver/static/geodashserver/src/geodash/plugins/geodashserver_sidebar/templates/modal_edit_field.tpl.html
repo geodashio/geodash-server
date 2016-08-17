@@ -10,7 +10,7 @@
       class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" aria-hidden="true" ng-click="go_back()"><i class="fa fa-times"></i></button>
-        <h4 id="myModalLabel" class="modal-title" ng-bind-html="modal_title()"></h4>
+        <h4 id="myModalLabel" class="modal-title"><span>Edit</span><span ng-repeat-start="x in breadcrumbs track by $index"> / </span><span ng-if="$last" ng-bind-html="x.content"></span><a ng-repeat-end ng-if="! $last" ng-click="rollback($index)" role="button" ng-bind-html="x.content"></a></h4>
       </div>
       <div class="modal-body">
         <div geodash-tabs></div>

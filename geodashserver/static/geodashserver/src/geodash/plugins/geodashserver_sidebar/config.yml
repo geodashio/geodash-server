@@ -21,6 +21,24 @@ less:
   - sidebar.less
   - sidebar-toggle.less
 modals:
+  - name: dashboard_config
+    ui:
+      mainClass: ""
+      tabs:
+        - target: modal-dashboard-config-projects
+          label: Projects
+        - target: modal-dashboard-config-plugins
+          label: Plugins
+        - target: modal-dashboard-config-directives
+          label: Directives
+        - target: modal-dashboard-config-templates
+          label: Templates
+        - target: modal-dashboard-config-filters
+          label: Filters
+        - target: modal-dashboard-config-yaml
+          label: YAML
+        - target: modal-dashboard-config-json
+          label: JSON
   - name: dashboard_security
     ui:
       mainClass: ""

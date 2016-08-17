@@ -18,16 +18,72 @@
               class="tab-pane fade"
               role="tabpanel"
               style="padding: 10px;">
-              <h3>Security as YAML</h3>
-              <pre style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | yaml : 8 }}</pre>
+              <nav class="navbar navbar-default">
+                <div class="container-fluid">
+                  <div class="navbar-header">
+                    <button
+                      type="button"
+                      class="collapsed navbar-toggle"
+                      data-toggle="collapse"
+                      data-target="#geodash-config-yaml-navbar-collapse"
+                      aria-expanded="false">
+                      <span class="sr-only">Toggle navigation</span>
+                      <span class="icon-bar"></span>
+                      <span class="icon-bar"></span>
+                      <span class="icon-bar"></span>
+                    </button>
+                    <div class="navbar-brand">
+                      <p class="navbar-text" style="color:rgb(85,85,85);font-size:24px;">Security as YAML</p>
+                    </div>
+                  </div>
+                  <div class="collapse navbar-collapse" id="geodash-security-yaml-navbar-collapse">
+                    <div class="navbar-form navbar-right">
+                      <a class="btn btn-primary" data-toggle="collapse" data-target="#geodash-security-yaml-preview">Show/Hide</a>
+                      <a class="btn btn-primary" href="/api/dashboard/security/geodash_dashboard_{{ workspace.config.slug}}.yml" target="_blank">Download</a>
+                    </div>
+                  </div>
+                </div>
+              </nav>
+              <pre
+                id="geodash-security-yaml-preview"
+                class="collapse"
+                style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | yaml : 8 }}</pre>
             </div>
             <div
               id="modal-dashboard-security-pane-json"
               class="tab-pane fade"
               role="tabpanel"
               style="padding: 10px;">
-              <h3>Security as JSON</h3>
-              <pre style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | json }}</pre>
+              <nav class="navbar navbar-default">
+                <div class="container-fluid">
+                  <div class="navbar-header">
+                    <button
+                      type="button"
+                      class="collapsed navbar-toggle"
+                      data-toggle="collapse"
+                      data-target="#geodash-config-json-navbar-collapse"
+                      aria-expanded="false">
+                      <span class="sr-only">Toggle navigation</span>
+                      <span class="icon-bar"></span>
+                      <span class="icon-bar"></span>
+                      <span class="icon-bar"></span>
+                    </button>
+                    <div class="navbar-brand">
+                      <p class="navbar-text" style="color:rgb(85,85,85);font-size:24px;">Security as JSON</p>
+                    </div>
+                  </div>
+                  <div class="collapse navbar-collapse" id="geodash-security-json-navbar-collapse">
+                    <div class="navbar-form navbar-right">
+                      <a class="btn btn-primary" data-toggle="collapse" data-target="#geodash-security-json-preview">Show/Hide</a>
+                      <a class="btn btn-primary" href="/api/dashboard/security/geodash_dashboard_{{ workspace.config.slug}}.json" target="_blank">Download</a>
+                    </div>
+                  </div>
+                </div>
+              </nav>
+              <pre
+                id="geodash-security-json-preview"
+                class="collapse"
+                style="word-wrap: break-word; white-space: pre-wrap;">{{ workspace.security | json }}</pre>
             </div>
           </div>
         </div>
