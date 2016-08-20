@@ -98429,7 +98429,7 @@ geodash.init.typeahead = function($element, featurelayers, baselayers)
         baselayers = baselayers || geodash.api.listBaseLayers();
         bloodhoundData = $.map(baselayers, function(bl, id){ return {'id': id, 'text': id}; });
       }
-      else
+      else if(initialData.length > 0)
       {
         bloodhoundData = [].concat(geodash.initial_data["data"][initialData]);
         for(var i = 0; i < bloodhoundData.length; i++)
@@ -99064,6 +99064,13 @@ geodash.listeners.showModal = function(event, args)
     });
 };
 
+geodash.ui.toggleOptions = function($event, selector)
+{
+  //var selector = $(event.currentTarget).attr('data-target');
+  //try{ $(selector).typeahead('close'); }catch(err){};
+  return geodash.ui.showOptions($event, selector);
+};
+
 geodash.ui.showOptions = function($event, selector)
 {
   try{
@@ -99657,6 +99664,21 @@ var extract = function(keyChain, node, fallback)
 
 geodash.codec = {};
 
+geodash.codec.formatArray = function(path, obj, fallback)
+{
+  var result = fallback || '';
+  var x = extract(path, obj);
+  if(Array.isArray(x))
+  {
+    result = x.join(",");
+  }
+  else if(angular.isString(x))
+  {
+    result = x;
+  }
+  return result;
+};
+
 geodash.codec.parseFeatures = function(response, fields_by_featuretype)
 {
   var features = [];
@@ -100096,16 +100118,22 @@ geodash.layers.init_featurelayer_wms = function($scope, live, map_config, id, la
       error: function(){},
       success: function(){},
       complete: function(response){
-        var fl = L.tileLayer.wms(w.url, {
+        var options = {
           renderOrder: $.inArray(id, map_config.renderlayers),
           buffer: w.buffer || 0,
           version: w.version || "1.1.1",
-          layers: (Array.isArray(w.layers) ? w.layers.join(",") : w.layers),
-          styles: angular.isDefined(w.styles) ? w.styles.join(",") : '',
+          layers: geodash.codec.formatArray('layers', w, ''),
+          styles: geodash.codec.formatArray('styles', w, ''),
           format: w.format || 'image/png',
-          transparent: angular.isDefined(w.transparent) ? w.transparent : true,
+          transparent: extract('transparent', w, true),
           attribution: extract("source.attribution", layerConfig, undefined)
-        });
+        };
+        var cql_filter = extract('cql_filter', w, undefined);
+        if(angular.isDefined(cql_filter))
+        {
+          options["CQL_FILTER"] = cql_filter;
+        }
+        var fl = L.tileLayer.wms(w.url,options);
         live["featurelayers"][id] = fl;
         geodash.layers.init_featurelayer_post($scope, live, id, fl, layerConfig.visible);
       }
@@ -100113,16 +100141,22 @@ geodash.layers.init_featurelayer_wms = function($scope, live, map_config, id, la
   }
   else
   {
-    var fl = L.tileLayer.wms(w.url, {
+    var options = {
       renderOrder: $.inArray(id, map_config.renderlayers),
       buffer: w.buffer || 0,
       version: w.version || "1.1.1",
-      layers: (Array.isArray(w.layers) ? w.layers.join(",") : w.layers),
-      styles: angular.isDefined(w.styles) ? w.styles.join(",") : '',
+      layers: geodash.codec.formatArray('layers', w, ''),
+      styles: geodash.codec.formatArray('styles', w, ''),
       format: w.format || 'image/png',
       transparent: angular.isDefined(w.transparent) ? w.transparent : true,
       attribution: extract("source.attribution", layerConfig, undefined)
-    });
+    };
+    var cql_filter = extract('cql_filter', w, undefined);
+    if(angular.isDefined(cql_filter))
+    {
+      options["CQL_FILTER"] = cql_filter;
+    }
+    var fl = L.tileLayer.wms(w.url, options);
     live["featurelayers"][id] = fl;
     geodash.layers.init_featurelayer_post($scope, live, id, fl, layerConfig.visible);
   }
@@ -100147,8 +100181,8 @@ geodash.layers.init_featurelayer_wmts = function($scope, live, map_config, id, l
         var fl = L.tileLayer.wmts(w.url, {
           renderOrder: $.inArray(id, map_config.renderlayers),
           version: w.version || "1.0.0",
-          layer: (Array.isArray(w.layers) ? w.layers.join(",") : w.layers),
-          styles: angular.isDefined(w.styles) ? w.styles.join(",") : '',
+          layers: geodash.codec.formatArray('layers', w, ''),
+          styles: geodash.codec.formatArray('styles', w, ''),
           format: w.format || 'image/png',
           transparent: angular.isDefined(w.transparent) ? w.transparent : true,
           attribution: extract("source.attribution", layerConfig, undefined),
@@ -100167,8 +100201,8 @@ geodash.layers.init_featurelayer_wmts = function($scope, live, map_config, id, l
     var fl = L.tileLayer.wmts(w.url, {
       renderOrder: $.inArray(id, map_config.renderlayers),
       version: w.version || "1.0.0",
-      layer: (Array.isArray(w.layers) ? w.layers.join(",") : w.layers),
-      styles: angular.isDefined(w.styles) ? w.styles.join(",") : '',
+      layers: geodash.codec.formatArray('layers', w, ''),
+      styles: geodash.codec.formatArray('styles', w, ''),
       format: w.format || 'image/png',
       transparent: angular.isDefined(w.transparent) ? w.transparent : true,
       attribution: extract("source.attribution", layerConfig, undefined),
@@ -101821,8 +101855,7 @@ geodash.directives["geodashModalLayerCarto"] = function(){
     //},
     scope: true,  // Inherit exact scope from parent controller
     templateUrl: 'geodash_modal_layer_carto.tpl.html',
-    link: function ($scope, element, attrs){
-    }
+    link: function ($scope, element, attrs){}
   };
 };
 
@@ -102217,11 +102250,12 @@ geodash.controllers.GeoDashControllerModal = function(
 {
   angular.extend(this, $controller('GeoDashControllerBase', {$element: $element, $scope: $scope}));
 
+  $scope.showOptions = geodash.ui.showOptions;
+
   $scope.stack = {
-    'head': undefined, //list[0]
-    'prev': undefined, //list[1]
-    //'list': [],
-    'backtrace': [] // Full list including other moadls stacks when necessary
+    'head': undefined, //backtrace[0]
+    'prev': undefined, //backtrace[1]
+    'backtrace': [] // Full list to include states from other modals
   };
 
   $scope.showModal = function(x)
@@ -102335,6 +102369,14 @@ geodash.controllers.GeoDashControllerModal = function(
       if($scope.stack.head.modal == removed.modal)
       {
         $scope.update_breadcrumbs();
+        $timeout(function(){
+          var m = $("#"+$scope.stack.head.modal);
+          $('[data-toggle="tooltip"]',m).tooltip();
+          geodash.init.typeahead(
+            m,
+            $scope.workspace.config.featurelayers,
+            $scope.workspace.config.baselayers);
+        },0);
       }
       else
       {
@@ -102350,7 +102392,14 @@ geodash.controllers.GeoDashControllerModal = function(
           $.each(newScope.stack.head, function(key, value){ newScope[key] = value;});
           newScope.update_breadcrumbs();
           $("#"+newModal).modal('show');
-          $timeout(function(){ $('[data-toggle="tooltip"]', $("#"+newModal)).tooltip(); },0);
+          $timeout(function(){
+            var m =  $("#"+newModal);
+            $('[data-toggle="tooltip"]',m).tooltip();
+            geodash.init.typeahead(
+              m,
+              newScope.workspace.config.featurelayers,
+              newScope.workspace.config.baselayers);
+          },0);
         },0);
       }
     }
@@ -102538,7 +102587,11 @@ geodash.controllers.GeoDashControllerModal = function(
       $scope.clear();
       $timeout(function(){
         $scope.push(x);
-        $timeout(function(){ $('[data-toggle="tooltip"]', $("#"+x.modal)).tooltip(); },0);
+        $timeout(function(){
+          var m = $("#"+x.modal);
+          $('[data-toggle="tooltip"]', m).tooltip();
+          geodash.init.typeahead(m, $scope.workspace.config.featurelayers, $scope.workspace.config.baselayers);
+        },0);
       },0);
     }
     else
@@ -102552,7 +102605,10 @@ geodash.controllers.GeoDashControllerModal = function(
         var m = $("#"+x.modal);
         m.modal({'backdrop': 'static','keyboard':false});
         m.modal('show');
-        $timeout(function(){ $('[data-toggle="tooltip"]', m).tooltip(); },0);
+        $timeout(function(){
+          $('[data-toggle="tooltip"]', m).tooltip();
+          geodash.init.typeahead(m, $scope.workspace.config.featurelayers, $scope.workspace.config.baselayers);
+        },0);
       },0);
     }
   };
@@ -102591,7 +102647,11 @@ geodash.controllers.GeoDashControllerModal = function(
             $.each(newScope.stack.head, function(key, value){ newScope[key] = value;});
             newScope.update_breadcrumbs();
             $("#"+newModal).modal('show');
-            $timeout(function(){ $('[data-toggle="tooltip"]', $("#"+newModal)).tooltip(); },0);
+            $timeout(function(){
+              var m = $("#"+newModal);
+              $('[data-toggle="tooltip"]', m).tooltip();
+              geodash.init.typeahead(m, $scope.workspace.config.featurelayers, $scope.workspace.config.baselayers);
+            },0);
           },0);
         }
       }

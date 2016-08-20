@@ -307,6 +307,13 @@ featurelayers:
               required: false
               description: 'The wms layers of the feature layer.'
             -
+              id: cql_filter
+              type: text
+              label: 'CQL Filter'
+              placeholder: 'PERSONS > 15000000'
+              required: false
+              description: 'The CQL Filter to apply to the WMS GetMap requests.'
+            -
               id: url
               type: text
               label: 'WMS URL'
@@ -527,6 +534,7 @@ legendlayers:
   placeholder: 'Legend Layers'
   required: false
   description: 'The layers in-order to show in the legend.'
+  source: layers
 overlays:
   type: objectarray
   label: 'Static Overlays'
