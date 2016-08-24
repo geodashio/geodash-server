@@ -78,12 +78,15 @@ build:
       - type: resource
         project: geodash
         name: c3.min.css
+      #- type: resource
+      #  project: geodash
+      #  name: leaflet.css
+      #- type: resource
+      #  project: geodash
+      #  name: leaflet.label.css
       - type: resource
         project: geodash
-        name: leaflet.css
-      - type: resource
-        project: geodash
-        name: leaflet.label.css
+        name: ol3.css
       - type: resource
         project: geodash
         name: font-awesome.min.css
@@ -158,24 +161,28 @@ build:
         name: c3.js
       - type: resource
         project: geodash
-        version: "1.0.0-b1"
-        name: leaflet-src.js
-      - type: resource
-        project: geodash
-        name: leaflet.utfgrid-src.js
-      - type: resource
-        project: geodash
-        names:
-          - wfp-simpleheat.js
-          - wfp-heatcanvas.js
-          - wfp-heatlayer.js
-      - type: resource
-        project: geodash
-        name: leaflet.label-src.js
-      - type: resource
-        project: geodash
-        version: custom
-        name: leaflet.TileLayer.WMTS.js
+        version: "3.17.1"
+        name: ol3.js
+#      - type: resource
+#        project: geodash
+#        version: "1.0.0-b1"
+#        name: leaflet-src.js
+#      - type: resource
+#        project: geodash
+#        name: leaflet.utfgrid-src.js
+#      - type: resource
+#        project: geodash
+#        names:
+#          - wfp-simpleheat.js
+#          - wfp-heatcanvas.js
+#          - wfp-heatlayer.js
+#      - type: resource
+#        project: geodash
+#        name: leaflet.label-src.js
+#      - type: resource
+#        project: geodash
+#        version: custom
+#        name: leaflet.TileLayer.WMTS.js
       - type: resource
         project: geodash
         version: "1.3.0"

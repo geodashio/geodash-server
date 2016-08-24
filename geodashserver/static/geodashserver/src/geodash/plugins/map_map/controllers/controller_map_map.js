@@ -10,26 +10,6 @@ var highlightFeature = function(e){
   }*/
 };
 
-var init_map = function(opts)
-{
-  var map = L.map('map',
-  {
-    attributionControl: geodash.api.opt_b(opts, "attributionControl", false),
-    zoomControl: geodash.api.opt_b(opts, "zoomControl", false),
-    minZoom: geodash.api.opt_i(opts, "minZoom", 3),
-    maxZoom: geodash.api.opt_i(opts, "maxZoom", 18)
-  });
-
-  map.setView(
-    [geodash.api.opt_i(opts,["latitude", "lat"],0), geodash.api.opt_i(opts,["longitude", "lon", "lng", "long"], 0)],
-    geodash.api.opt_i(opts, ["zoom", "z"], 0));
-
-  $.each(geodash.api.opt_j(opts, "listeners"), function(e, f){
-    map.on(e, f);
-  });
-
-  return map;
-};
 geodash.controllers["controller_map_map"] = function(
   $rootScope, $scope, $element, $http, $q,
   $compile, $interpolate, $templateCache,
@@ -61,33 +41,42 @@ geodash.controllers["controller_map_map"] = function(
   var listeners =
   {
     click: function(e) {
-      var c = e.latlng;
+      var m = live["map"];
+      var v = m.getView();
+      var c = v.getCenter();
       var delta = {
-        "lat": c.lat,
-        "lon": c.lng
+        "lat": c[1],
+        "lon": c[0]
       };
       geodash.api.intend("clickedOnMap", delta, $scope);
     },
     zoomend: function(e){
+      var m = live["map"];
+      var v = m.getView();
+      var c = v.getCenter();
       var delta = {
-        "extent": live["map"].getBounds().toBBoxString(),
-        "z": live["map"].getZoom()
+        "extent": v.calculateExtent(m.getSize()).join(","),
+        "z": v.getZoom()
       };
       geodash.api.intend("viewChanged", delta, $scope);
     },
     dragend: function(e){
-      var c = live["map"].getCenter();
+      var m = live["map"];
+      var v = m.getView();
+      var c = v.getCenter();
       var delta = {
-        "extent": live["map"].getBounds().toBBoxString(),
-        "lat": c.lat,
-        "lon": c.lng
+        "extent": v.calculateExtent(m.getSize()).join(","),
+        "lat": c[1],
+        "lon": c[0]
       };
       geodash.api.intend("viewChanged", delta, $scope);
     },
     moveend: function(e){
-      var c = live["map"].getCenter();
+      var m = live["map"];
+      var v = m.getView();
+      var c = v.getCenter();
       var delta = {
-        "extent": live["map"].getBounds().toBBoxString(),
+        "extent": v.calculateExtent(m.getSize()).join(","),
         "lat": c.lat,
         "lon": c.lng
       };
@@ -98,7 +87,7 @@ geodash.controllers["controller_map_map"] = function(
   // The Map
   var hasViewOverride = hasHashValue(["latitude", "lat", "longitude", "lon", "lng", "zoom", "z"]);
   var view = state["view"];
-  live["map"] = init_map({
+  live["map"] = geodash.init.map_ol3({
     "attributionControl": extract(expand("controls.attribution"), map_config, true),
     "zoomControl": extract(expand("controls.zoom"), map_config, true),
     "minZoom": extract(expand("view.minZoom"), map_config, 0),
@@ -110,13 +99,12 @@ geodash.controllers["controller_map_map"] = function(
   });
   //////////////////////////////////////
   // Base Layers
-  var baseLayers = geodash.layers.init_baselayers(live["map"], map_config["baselayers"]);
+  var baseLayers = geodash.layers.init_baselayers_ol3(live["map"], map_config["baselayers"]);
   $.extend(live["baselayers"], baseLayers);
   // Load Default/Initial Base Layer
-  //var baseLayerID = $.grep(map_config[])
   var baseLayerID = map_config["view"]["baselayer"] || map_config["baselayers"][0].id;
-  //var baseLayerID = map_config["baselayers"][0].id;
-  live["baselayers"][baseLayerID].addTo(live["map"]);
+  live["map"].addLayer(live["baselayers"][baseLayerID]);
+  //live["baselayers"][baseLayerID].addTo(live["map"]);
   geodash.api.intend("viewChanged", {'baselayer': baseLayerID}, $scope);
   geodash.api.intend("layerLoaded", {'type':'baselayer', 'layer': baseLayerID}, $scope);
   //////////////////////////////////////
