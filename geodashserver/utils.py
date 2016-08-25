@@ -13,6 +13,8 @@ try:
 except ImportError:
     import json
 
+from django.template.loader import get_template
+
 from geodash.enumerations import MONTHS_SHORT3
 
 from geodash.data import GeoDashDatabaseConnection, calc_breaks_natural, insertIntoObject
@@ -61,3 +63,30 @@ def build_state_schema():
     y = get_template(t).render({})
     obj = yaml.load(y)
     return obj.get('state_schema', None)
+
+
+def build_context(config, initial_state, state_schema):
+    return {
+        "map_config": config,
+        "map_config_json": json.dumps(config),
+        "state": initial_state,
+        "state_json": json.dumps(initial_state),
+        "state_schema": state_schema,
+        "state_schema_json": json.dumps(state_schema),
+        "init_function": "init_dashboard",
+        "geodash_main_id": "geodash-main"
+    }
+
+
+def build_dashboard_config(map_obj):
+    map_config = yaml.load(map_obj.config)
+    map_config["slug"] = map_obj.slug
+    map_config["title"]  = map_obj.title
+    return map_config
+
+
+def build_editor_config():
+    editor_config_template = "geodashserver/editor.yml"
+    editor_config_yml = get_template(editor_config_template).render({})
+    editor_config = yaml.load(editor_config_yml)
+    return editor_config

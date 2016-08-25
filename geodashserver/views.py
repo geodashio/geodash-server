@@ -24,7 +24,8 @@ except ImportError:
 from geodash.cache import provision_memcached_client
 
 from geodashserver.models import GeoDashDashboard
-from geodashserver.utils import build_initial_state, build_state_schema
+from geodashserver.security import check_perms_view, expand_perms, expand_users, geodash_assign_default_perms
+from geodashserver.utils import build_initial_state, build_state_schema, build_editor_config
 
 SCHEMA_PATH = 'geodashserver/static/geodashserver/build/schema/schema.yml'
 
@@ -36,21 +37,12 @@ def home(request, template="geodashserver/home.html"):
     page = "home" # READ: No context path
     slug = "home"
     map_obj = get_object_or_404(GeoDashDashboard, slug=slug)
-    map_config = yaml.load(map_obj.config)
 
-    initial_state = build_initial_state(map_config, page=page, slug=slug)
-    state_schema = build_state_schema()
-
-    ctx = {
-        "map_config": map_config,
-        "map_config_json": json.dumps(map_config),
-        "state": initial_state,
-        "state_json": json.dumps(initial_state),
-        "state_schema": state_schema,
-        "state_schema_json": json.dumps(state_schema),
-        "init_function": "init_dashboard",
-        "geodash_main_id": "geodash-main"
-    }
+    config = yaml.load(map_obj.config)
+    ctx = build_context(
+        config,
+        build_initial_state(config, page=page, slug=slug),
+        build_state_schema())
 
     return render_to_response(template, RequestContext(request, ctx))
 
@@ -61,22 +53,13 @@ def explore(request, template="geodashserver/explore.html"):
     page = "explore"
     slug = "explore"
     map_obj = get_object_or_404(GeoDashDashboard, slug=slug)
-    map_config = yaml.load(map_obj.config)
 
-    initial_state = build_initial_state(map_config, page=page, slug=slug)
-    state_schema = build_state_schema()
-
-    ctx = {
-        "map_config": map_config,
-        "map_config_json": json.dumps(map_config),
-        "state": initial_state,
-        "state_json": json.dumps(initial_state),
-        "state_schema": state_schema,
-        "state_schema_json": json.dumps(state_schema),
-        "init_function": "init_dashboard",
-        "geodash_main_id": "geodash-main",
-        "include_sidebar_right": False
-    }
+    config = yaml.load(map_obj.config)
+    ctx = build_context(
+        config,
+        build_initial_state(config, page=page, slug=slug),
+        build_state_schema())
+    ctx["include_sidebar_right"] = False
 
     return render_to_response(template, RequestContext(request, ctx))
 
@@ -89,74 +72,41 @@ def geodash_dashboard(request, slug=None, template="geodashserver/dashboard.html
     print get_perms(request.user, map_obj)
     print request.user.has_perm("view_geodashdashboard", map_obj)
 
-    if not map_obj.published:
-        if not request.user.is_authenticated():
-            raise Http404("Not authenticated.")
-        if not request.user.has_perm("view_geodashdashboard", map_obj):
-            raise Http404("Not authorized.")
+    check_perms_view(request, map_obj, raiseErrors=True)
 
     pages = {}
     for gm in GeoDashDashboard.objects.all():
         pages[gm.slug] = reverse('geodash_dashboard', kwargs={'slug':gm.slug})
 
-    #map_config_template = "geodashserver/maps/"+map_obj.template
-    #map_config_yml = get_template(map_config_template).render({
-    #    'slug': map_obj.slug,
-    #    'title': map_obj.title
-    #})
-    map_config = yaml.load(map_obj.config)
-    map_config["slug"] = map_obj.slug
-    map_config["title"]  = map_obj.title
-
-    #map_config_schema_template = "geodash/schema.yml"
-    #map_config_schema_yml = get_template(map_config_schema_template).render({})
-    #map_config_schema = yaml.load(map_config_schema_yml)
+    map_config = build_dashboard_config(map_obj)
     map_config_schema = yaml.load(file(SCHEMA_PATH,'r'))
 
     editor_template = "geodashserver/editor.yml"
     editor_yml = get_template(editor_template).render({})
     editor = yaml.load(editor_yml)
 
-    allperms = get_users_with_perms(map_obj, attach_perms=True)
-    print allperms
-    security = {
-        "advertised": map_obj.advertised,
-        "published": map_obj.published,
-        'view_geodashdashboard': sorted([x.username for x in allperms if 'view_geodashdashboard' in allperms[x]]),
-        'change_geodashdashboard':sorted([x.username for x in allperms if 'change_geodashdashboard' in allperms[x]]),
-        'delete_geodashdashboard':sorted([x.username for x in allperms if 'delete_geodashdashboard' in allperms[x]])
-    }
+    security = expand_perms(map_obj)
     security_schema = yaml.load(get_template("geodashserver/security.yml").render({}))
 
-    initial_state = build_initial_state(map_config, page="dashboard", slug=slug)
-    state_schema = build_state_schema()
+    ctx = build_context(
+        config,
+        build_initial_state(config, page=page, slug=slug),
+        build_state_schema())
 
-    users = []
-    if request.user.has_perm("change_geodashdashboard", map_obj):
-        users =[{'id': x.username, 'text': x.username} for x in User.objects.exclude(username='AnonymousUser')]
-
-    ctx = {
+    ctx.update({
         "pages_json": json.dumps(pages),
-        "map_config": map_config,
-        "map_config_json": json.dumps(map_config),
         "map_config_schema": map_config_schema,
         "map_config_schema_json": json.dumps(map_config_schema),
         "editor": editor,
         "editor_json": json.dumps(editor),
-        "state": initial_state,
-        "state_json": json.dumps(initial_state),
-        "state_schema": state_schema,
-        "state_schema_json": json.dumps(state_schema),
         "security": security,
         "security_json": json.dumps(security),
         "security_schema": security_schema,
         "security_schema_json": json.dumps(security_schema),
-        "init_function": "init_dashboard",
-        "geodash_main_id": "geodash-main",
         "include_sidebar_right": request.user.has_perm("change_geodashdashboard", map_obj),
         "perms_json": json.dumps(get_perms(request.user, map_obj)),
-        "users": json.dumps(users)
-    }
+        "users": json.dumps(expand_users(requet, map_obj))
+    })
 
     return render_to_response(template, RequestContext(request, ctx))
 
@@ -164,16 +114,8 @@ def geodash_dashboard(request, slug=None, template="geodashserver/dashboard.html
 def geodash_dashboard_config(request, slug=None, extension="json"):
 
     map_obj = get_object_or_404(GeoDashDashboard, slug=slug)
-
-    if not map_obj.published:
-        if not request.user.is_authenticated():
-            raise Http404("Not authenticated.")
-        if not request.user.has_perm("view_geodashdashboard", map_obj):
-            raise Http404("Not authorized.")
-
-    map_config = yaml.load(map_obj.config)
-    map_config["slug"] = map_obj.slug
-    map_config["title"]  = map_obj.title
+    check_perms_view(request, map_obj, raiseErrors=True)
+    map_config = build_dashboard_config(map_obj)
 
     ext_lc = extension.lower();
     if ext_lc == "json":
@@ -213,7 +155,6 @@ def geodash_dashboard_config_new(request):
             'message': 'Create new dashboard failed.  Same slug.'
         }
     else:
-        owner = request.user
         title = config.pop('title', None)
         security = content['security']
         map_obj = GeoDashDashboard(
@@ -224,11 +165,7 @@ def geodash_dashboard_config_new(request):
           published=(security.get('published', False) in ["true", "t", "1", "yes", "y", True]))
         map_obj.save()
 
-        for perm in ["view_geodashdashboard", "change_geodashdashboard", "delete_geodashdashboard"]:
-            UserObjectPermission.objects.assign_perm(
-                perm,
-                user=owner,
-                obj=map_obj)
+        geodash_assign_default_perms(map_obj, request.user)
 
         config.update({
             'slug': slug,
@@ -308,22 +245,11 @@ def geodash_dashboard_config_save(request, slug=None):
 
 
 def geodash_map_schema(request):
-
-    #map_config_schema_template = "geodash/schema.yml"
-    #map_config_schema_yml = get_template(map_config_schema_template).render({})
-    #map_config_schema = yaml.load(map_config_schema_yml)
     map_config_schema = yaml.load(file(SCHEMA_PATH,'r'))
-
     return HttpResponse(json.dumps(map_config_schema, default=jdefault), content_type="application/json")
 
-
 def geodash_editor_config(request):
-
-    editor_config_template = "geodashserver/editor.yml"
-    editor_config_yml = get_template(editor_config_template).render({})
-    editor_config = yaml.load(editor_config_yml)
-
-    return HttpResponse(json.dumps(editor_config, default=jdefault), content_type="application/json")
+    return HttpResponse(json.dumps(build_editor_config(), default=jdefault), content_type="application/json")
 
 class geodash_view(View):
 
