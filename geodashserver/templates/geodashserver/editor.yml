@@ -52,3 +52,7 @@ panes:
     fields:
       - config.legend.title
       - config.legendlayers
+  - id: servers
+    label: Servers
+    fields:
+      - config.servers

@@ -13,18 +13,21 @@ view_geodashdashboard:
   placeholder: Can View
   required: true
   description: "The users who can view the dashboard."
-  source: users
+  typeahead:
+    local: users
 change_geodashdashboard:
   type: stringarray
   label: Can Edit
   placeholder: Can Edit
   required: true
   description: "The users who can edit the dashboard."
-  source: users
+  typeahead:
+    local: users
 delete_geodashdashboard:
   type: stringarray
   label: Can Delete
   placeholder: Can Delete
   required: true
   description: "The users who can delete the dashboard."
-  source: users
+  typeahead:
+    local: users

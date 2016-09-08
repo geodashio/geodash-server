@@ -1,0 +1,11 @@
+---
+geodash_capabilities_json: "/api/capabilities.json"
+geodash_capabilities_yaml: "/api/capabilities.yaml"
+save: "/api/dashboard/{{ slug }}/config/save"
+saveas: "/api/dashboard/config/new"
+download_config_json: "/api/dashboard/config/geodash_dashboard_{{ slug }}.json"
+download_config_yaml: "/api/dashboard/config/geodash_dashboard_{{ slug }}.yml"
+download_security_json: "/api/dashboard/security/{{ slug }}.json"
+download_security_yaml: "/api/dashboard/security/{{ slug }}.yml"
+download_servers_json: "/api/dashboard/servers/{{ slug }}.json"
+download_servers_yaml: "/api/dashboard/servers/{{ slug }}.yml"

@@ -48,9 +48,24 @@ urlpatterns = [
         name='geodash_editor_config'),
 
     url(
+        r'^api/capabilities[.](?P<extension>[^.]+)$',
+        views.geodash_capabilities,
+        name='geodash_capabilities'),
+
+    url(
         r'^api/dashboard/config/geodash_dashboard_(?P<slug>[^/]+)[.](?P<extension>[^.]+)$',
         views.geodash_dashboard_config,
         name='geodash_dashboard_config'),
+
+    url(
+        r'^api/dashboard/security/(?P<slug>[^/]+)[.](?P<extension>[^.]+)$',
+        views.geodash_dashboard_security,
+        name='geodash_dashboard_security'),
+
+    url(
+        r'^api/dashboard/servers/(?P<slug>[^/]+)[.](?P<extension>[^.]+)$',
+        views.geodash_dashboard_servers,
+        name='geodash_dashboard_servers'),
 
     url(
         r'^api/dashboard/config/new$',

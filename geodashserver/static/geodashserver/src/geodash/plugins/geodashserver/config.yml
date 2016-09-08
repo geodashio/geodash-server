@@ -1,0 +1,4 @@
+---
+name: geodashserver
+endpoints:
+  - endpoints.yml

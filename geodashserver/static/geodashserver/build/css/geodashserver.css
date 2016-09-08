@@ -485,55 +485,55 @@
 /* Legend */
 /* Filter */
 /* Sidebar */
-.geodashserver-welcome a {
+.geodasheditor-welcome a {
   font-family: 'Open Sans', sans-serif;
 }
-.geodashserver-welcome a.btn-primary:hover,
-.geodashserver-welcome a.btn-primary:focus {
+.geodasheditor-welcome a.btn-primary:hover,
+.geodasheditor-welcome a.btn-primary:focus {
   color: #fff;
   background-color: #286090;
   border-color: #204d74;
 }
-.geodashserver-welcome .tab-pane .welcome-body {
+.geodasheditor-welcome .tab-pane .welcome-body {
   font-family: 'Open Sans', sans-serif;
   font-size: 14px;
 }
-.geodashserver-welcome .tab-pane h3.welcome-body {
+.geodasheditor-welcome .tab-pane h3.welcome-body {
   font-family: 'Open Sans', sans-serif;
   font-size: 18px;
 }
-.geodashserver-welcome .tab-pane .input-group {
+.geodasheditor-welcome .tab-pane .input-group {
   width: 400px;
 }
-.geodashserver-welcome .tab-pane .input-group-addon {
+.geodasheditor-welcome .tab-pane .input-group-addon {
   font-family: 'Open Sans', sans-serif;
   font-size: 20px;
 }
-.geodashserver-welcome .tab-pane .input-group-addon.btn-clear {
+.geodasheditor-welcome .tab-pane .input-group-addon.btn-clear {
   color: #fff;
   background-color: #d9534f;
   border-color: #d43f3a;
 }
-.geodashserver-welcome .tab-pane .input-group-addon.btn-clear:hover,
-.geodashserver-welcome .tab-pane .input-group-addon.btn-clear:focus,
-.geodashserver-welcome .tab-pane .input-group-addon.btn-clear.focus {
+.geodasheditor-welcome .tab-pane .input-group-addon.btn-clear:hover,
+.geodasheditor-welcome .tab-pane .input-group-addon.btn-clear:focus,
+.geodasheditor-welcome .tab-pane .input-group-addon.btn-clear.focus {
   color: #fff;
   background-color: #c9302c;
   border-color: #ac2925;
 }
-.geodashserver-welcome .tab-pane .select2-container {
+.geodasheditor-welcome .tab-pane .select2-container {
   height: 56px !important;
 }
-.geodashserver-welcome .tab-pane .select2-container .select2-selection--single {
+.geodasheditor-welcome .tab-pane .select2-container .select2-selection--single {
   height: 56px !important;
   border-top-left-radius: 0px;
   border-bottom-left-radius: 0px;
 }
-.geodashserver-welcome .tab-pane .select2-selection__rendered {
+.geodasheditor-welcome .tab-pane .select2-selection__rendered {
   font-size: 20px;
   line-height: 56px !important;
 }
-.geodashserver-welcome-select-dropdown {
+.geodasheditor-welcome-select-dropdown {
   z-index: 999999;
 }
 

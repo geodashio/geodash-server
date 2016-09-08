@@ -174,6 +174,11 @@ featurelayers:
   placeholder: 'Feature Layers'
   required: true
   description: 'Feature layers available.'
+  search:
+    output: obj
+    templates:
+      suggestion: WMSLayer
+    datasets: WMSServers
   schema:
     verbose_singular: 'Feature Layer'
     verbose_plural: 'Feature Layers'
@@ -220,13 +225,14 @@ featurelayers:
         id: type
         type: text
         label: Type
-        placeholder: 'wms, wmts, geojson'
+        placeholder: 'wms, wmts, geojson, tegola'
         required: false
-        description: 'The type of the feature layer (wms, wmts, geojson).'
+        description: 'The type of the feature layer (wms, wmts, geojson, tegola).'
         options:
           - wms
           - wmts
           - geojson
+          - tegola
       -
         id: view.minZoom
         type: int
@@ -320,6 +326,7 @@ featurelayers:
               placeholder: 'http://geonode.wfp.org/geoserver/geonode/wms'
               required: false
               description: 'The url of the WMS server.'
+              typeahead: {local: wms}
       -
         id: wmts.layers
         type: text
@@ -382,6 +389,71 @@ featurelayers:
           field: type
           values:
             - geojson
+      -
+        id: tegola
+        type: object
+        label: Tegola
+        placeholder: Tegola
+        required: false
+        description: 'Tegola configuration.'
+        when:
+          field: type
+          values:
+            - tegola
+        schema:
+          verbose_singular: Tegola
+          fields:
+            -
+              id: map
+              type: text
+              label: Map
+              placeholder: map
+              required: false
+              description: 'The tegola map to show.'
+            -
+              id: url
+              type: text
+              label: 'Tegola Server URL'
+              placeholder: 'http://localhost:9090'
+              required: false
+              description: 'The url of the tegola server.'
+              typeahead: {local: tegola}
+            -
+              id: debug
+              type: text
+              label: Debug
+              placeholder: debug
+              required: false
+              description: 'Debug.  If yes, will return border of each tile as vectors.'
+      -
+        id: heatmap
+        type: object
+        label: Heatmap
+        placeholder: Heatmap
+        required: false
+        description: 'Heatmap configuration.'
+        when:
+          field: type
+          values:
+            - wms
+            - geojson
+        schema:
+          verbose_singular: Heatmap
+          fields:
+            -
+              id: blur
+              type: text
+              label: 'Heatmap Blur'
+              placeholder: 15
+              required: false
+              description: 'heatmap blur'
+            -
+              id: radius
+              type: text
+              label: 'Heatmap Radius'
+              placeholder: 5
+              required: false
+              description: 'heatmap radius'
       -
         id: popup
         type: object
@@ -446,7 +518,8 @@ view:
     placeholder: osm
     required: true
     description: 'The default base layer shown on page load.'
-    source: baselayers
+    typeahead:
+      local: baselayers
   latitude:
     order: 0
     type: int
@@ -489,7 +562,123 @@ renderlayers:
   placeholder: 'Render Layers'
   required: true
   description: 'The layers in stack order to render; the first is on top; the last is on the bottom.'
-  source: layers
+  search:
+    local: layers
+    templates:
+      suggestion: GeoDashLayer
+servers:
+  type: objectarray
+  label: Servers
+  placeholder: Servers
+  required: true
+  description: 'Known servers available.'
+  schema:
+    verbose_singular: Server
+    verbose_plural: Servers
+    fields:
+      -
+        id: id
+        type: text
+        label: ID
+        placeholder: ID
+        required: true
+        description: 'The id of your server.'
+      -
+        id: title
+        type: text
+        label: Title
+        placeholder: title
+        required: true
+        description: 'The title of your server.'
+      -
+        id: description
+        type: text
+        label: Description
+        placeholder: description
+        required: true
+        description: 'The description of your server.'
+      -
+        id: type
+        type: text
+        label: Type
+        placeholder: 'wms, mapbox, tegola'
+        required: false
+        description: 'The type of the server (wms, mapbox, tegola).'
+        options:
+          - wms
+          - mapbox
+          - tegola
+      -
+        id: wms
+        type: object
+        label: WMS
+        placeholder: wms
+        required: false
+        description: 'WMS configuration.'
+        when:
+          field: type
+          values:
+            - wms
+        schema:
+          verbose_singular: WMS
+          fields:
+            -
+              id: url
+              type: text
+              label: 'WMS URL'
+              placeholder: 'http://geonode.wfp.org/geoserver/geonode/wms'
+              required: false
+              description: 'The url of the WMS server.'
+      -
+        id: wfs
+        type: object
+        label: WFS
+        placeholder: wfs
+        required: false
+        description: 'WFS configuration.'
+        when:
+          field: type
+          values:
+            - wms
+        schema:
+          verbose_singular: WFS
+          fields:
+            -
+              id: version
+              type: text
+              label: 'WFS Version'
+              placeholder: 1.0.0
+              required: false
+              description: 'The version of the WFS server.'
+              options: [1.0.0, 1.1.0, '2.0', 2.0.2]
+            -
+              id: url
+              type: text
+              label: 'WFS URL'
+              placeholder: 'http://geonode.wfp.org/cors/geoserver/wfs'
+              required: false
+              description: 'The url of the WFS server.'
+      -
+        id: tegola
+        type: object
+        label: Tegola
+        placeholder: tegola
+        required: false
+        description: 'Tegola configuration.'
+        when:
+          field: type
+          values:
+            - tegola
+        schema:
+          verbose_singular: Tegola
+          fields:
+            -
+              id: url
+              type: text
+              label: 'Tegola URL'
+              placeholder: 'http://localhost:9090'
+              required: false
+              description: 'The url of the Tegola server.'
 pages:
   type: objectarray
   label: Pages

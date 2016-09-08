@@ -16,10 +16,17 @@ bootstrap:
   variables: "./src/less/bootstrap/variables.less"
   dest: "./build/bootstrap"
 plugins:
-  - map_map
-  - geodashserver_welcome
-  - geodashserver_sidebar
-  - main
+  # Used for Production
+  #- https://github.com/geodashio/geodash-plugin-map-map.git
+  #- https://github.com/geodashio/geodash-plugin-editor-welcome.git
+  #- https://github.com/geodashio/geodash-plugin-editor-sidebar.git
+  #- https://github.com/geodashio/geodash-plugin-main.git
+  # Use file links when editing locally
+  - file:///home/vagrant/geodash-plugin-map-map.git
+  - file:///home/vagrant/geodash-plugin-editor-welcome.git
+  - file:///home/vagrant/geodash-plugin-editor-sidebar.git
+  - file:///home/vagrant/geodash-plugin-main.git
+  - geodashserver
 dependencies:
   production:
     javascript:
@@ -189,6 +196,10 @@ build:
         name: showdown.js
       - type: build
         name: monkeypatch.js
+      - type: resource
+        project: geodash
+        version: "0.0.1"
+        name: geodash.js
       - type: build
         name: main.js
     outfile: geodashserver.full.js

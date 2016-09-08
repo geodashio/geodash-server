@@ -1,6 +1,7 @@
+var geodasheditor = {};
 var geodashserver = {};
 
-geodashserver.welcome = function()
+geodashserver.welcome = geodasheditor.welcome = function()
 {
   var scope = geodash.api.getScope("geodash-main");
   var intentData = {
@@ -17,7 +18,7 @@ geodashserver.welcome = function()
   geodash.api.intend("toggleModal", intentData, scope);
 };
 
-geodashserver.html5data = function()
+geodashserver.html5data = geodasheditor.html5data = function()
 {
   var args = arguments;
   var zero_lc = args[0].toLowerCase();

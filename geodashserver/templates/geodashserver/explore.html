@@ -11,7 +11,8 @@
     geodash.initial_data =
     {
       "data": {
-        "dashboards_typeahead": {{ GEODASH_DASHBOARDS_TYPEAHEAD|safe }}
+        "dashboards_typeahead": {{ GEODASH_DASHBOARDS_TYPEAHEAD|safe }},
+        "endpoints": {{ endpoints_json|safe }}
       }
     }
 </script>

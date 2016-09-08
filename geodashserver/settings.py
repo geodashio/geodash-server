@@ -204,4 +204,7 @@ GEODASH_STATIC_DEBUG = {
     "select2": True,
     'monolith': True
 }
+#-----------------------------
+# Debugging & Testing
+GEODASH_MAPPING_LIBRARY = "ol3"  # Leaflet
 #######################################

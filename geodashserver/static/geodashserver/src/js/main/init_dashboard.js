@@ -33,7 +33,7 @@ geodash.init_dashboard = function(appName, mainElement)
   and is not good.  So you NEED!!! to get to it first!!!!!!
   */
 
-  geodash.init_controller_base(app);
+  geodash.init.controller_base(app);
 
   init_geodashserver_controller_main(mainElement, app);
 

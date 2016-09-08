@@ -53,6 +53,7 @@
 
 {% block map_config %}
 <script>
+  geodash.mapping_library = "{{ GEODASH_MAPPING_LIBRARY }}";
   geodash.map_config = {{ map_config_json|safe }};
 </script>
 {% endblock %}
@@ -81,6 +82,14 @@
   <div geodash-dashboard-editor></div>
   <div class="geodash-sidebar-right-modals">
     <div
+      id="geodash-modal-edit-field"
+      class="geodash-controller geodash-controller-modal geodash-modal modal fade geodash-edit-field"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="myModalLabel"
+      geodash-modal-edit-field>
+    </div>
+    <div
       id="geodash-modal-edit-object"
       class="geodash-controller geodash-controller-modal geodash-modal modal fade geodash-edit-object"
       tabindex="-1"
@@ -89,12 +98,12 @@
       geodash-modal-edit-object>
     </div>
     <div
-      id="geodash-modal-edit-field"
-      class="geodash-controller geodash-controller-modal geodash-modal modal fade geodash-edit-field"
+      id="geodash-modal-search-object"
+      class="geodash-controller geodash-controller-modal geodash-modal modal fade geodash-search-object"
       tabindex="-1"
       role="dialog"
       aria-labelledby="myModalLabel"
-      geodash-modal-edit-field>
+      geodash-modal-search-object>
     </div>
   </div>
 </div>
